@@ -6,9 +6,9 @@ import shutil
 
 # TODO: Remove dependencies
 from instattack.config import constants
-from instattack.lib.utils import measure_ansi_string
 
 from ..compat import safe_text
+from ..utils import measure_ansi_string
 
 # TODO: More consistent color setting scheme with project.
 from .termcolor import colored
@@ -36,6 +36,7 @@ class LineItem:
     type: str = 'line'
     state: SpinnerStates = SpinnerStates.NOTSET
     indent: int = 0
+    priority: int = 0  # "Higher" Than Header Items
 
     def _indentation(self, base_indent=0):
         indent_count = (self.indent + 1) + base_indent
@@ -119,6 +120,7 @@ class HeaderItem:
     line_index: int = 0
     state: SpinnerStates = SpinnerStates.NOTSET
     indent: int = 0
+    priority: int = 1  # "Lower" Than Line Items
 
     def _indentation(self, base_indent=0):
         num_spaces = (base_indent + self.indent) * INDENT_COUNT

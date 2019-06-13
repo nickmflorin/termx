@@ -1,6 +1,5 @@
 import contextlib
 import collections
-import functools
 import itertools
 import sys
 import threading
@@ -59,7 +58,7 @@ class SpinnerGroup(SpinnerControl):
     def __init__(self, text, color, base_indent=0, lock=None, **kwargs):
         super(SpinnerGroup, self).__init__(**kwargs)
 
-        self._blocks = []
+        self._groups = []
 
         self._base_indent = base_indent
         self._color = color
@@ -87,14 +86,18 @@ class SpinnerGroup(SpinnerControl):
         # from -1 to 0.  Otherwise, when we update the header line, we do not
         # know whether or not to increment the number of lines.
         self._initial = True
+        self._done = False
 
         self._spinner = None
         self._consumer = None
         self._stdout_lock = lock or threading.Lock()
 
     @contextlib.contextmanager
-    def block(self, text):
-        block = SpinnerGroup(
+    def group(self, text):
+        time.sleep(1)
+        self.done()
+
+        group = SpinnerGroup(
             text=safe_text(text),
             color=self._color,
             print_interval=self._print_interval,
@@ -102,14 +105,15 @@ class SpinnerGroup(SpinnerControl):
             base_indent=self._base_indent + 1,
             lock=self._stdout_lock,
         )
+        self._groups.append(group)
+        group.start()
         try:
-            self.hold_for_children()
-            time.sleep(2)
-            block.start()
-            self._blocks.append(block)
-            yield block
+            yield group
+        except Exception as e:
+            group.error(str(e))
+            raise e
         finally:
-            block.done()
+            group.done()
 
     def __enter__(self):
         self.start()
@@ -143,26 +147,18 @@ class SpinnerGroup(SpinnerControl):
 
         If provided, changes the header text.
         """
-        self._change_state(state=SpinnerStates.OK)
-        self._change_text(text=text)
+        if not self._done:
+            self._done = True
+            # Guaranteed to be Change because of OK State
+            self._change(state=SpinnerStates.OK, text=text, priority=(1, -2))
 
-        # Guaranteed to be Change because of OK State
-        item = HeaderItem(
-            text=self._text,
-            state=self._state,
-            frame=self._frame,
-            color=self._color,
-        )
-
-        # This will be the highest priority header item, followed by the second
-        # highest priority header item which stops the queue consumption.
-        # This means that the last header item is guaranteed to print after all
-        # lines have been written, and then queue consumption stops.
-        # Keeping numbers negative guarantees there is no comparison issue.
-        self.queue.put(((1, -2), item))
-        self.queue.put(((1, -1), None))
-
-        self.stop()
+            # This will be the highest priority header item, followed by the second
+            # highest priority header item which stops the queue consumption.
+            # This means that the last header item is guaranteed to print after all
+            # lines have been written, and then queue consumption stops.
+            # Keeping numbers negative guarantees there is no comparison issue.
+            self._put(None, priority=(1, -1))
+            self.stop()
 
     def stop(self):
         """
@@ -182,62 +178,49 @@ class SpinnerGroup(SpinnerControl):
 
     def write(self, text, state=None):
         """
-        Write a message underneath the last written message without changing
+        Write a message underneath the last written message waithout changing
         the top level text or spinner.
 
-        [x] TODO:
-        -------
-        We might also want to update _head_out() on a state change.
+        Only Updates Header on State Change Associated w/ Line
         """
         state = state or SpinnerStates.NOTSET
+        self._change(state)
 
-        state_changed = self._change_state(state=state)
-        if state_changed:
-            header = HeaderItem(
-                state=self._state,
-                frame=self._frame,
-                text=self._text,
-                color=self._color,
-            )
-            self._put_header(header)
+        line = LineItem(text=text, state=state)
+        self._put(line)
 
-        line = LineItem(
-            text=text,
-            state=state,
-        )
-        self._put_line(line)
+    """
+    [x] TODO:
+    --------
+    Allow errors, OK and warnings to be referenced JUST for the individual lines
+    through the use of `propogate`, in which case they can be non-colored
+    versions of the icons.
 
-    def error(self, text=None):
-        self.fail(text=text)
+    We have to take a closer look at setting fail, error, etc. without text,
+    should we allow that to just update the header?
+    """
 
-    def fail(self, text=None):
+    def error(self, text=None, propogate=True):
+        self.fail(text=text, propogate=propogate)
+
+    def fail(self, text=None, propogate=True):
         if text:
             self.write(text, state=SpinnerStates.FAIL)
         else:
-            state_changed = self._change_state(state=SpinnerStates.FAIL)
-            if state_changed:
-                self._head_out()
+            self._change_state(state=SpinnerStates.FAIL)
 
     def warning(self, text=None):
         if text:
             self.write(text, state=SpinnerStates.WARNING)
         else:
-            state_changed = self._change_state(state=SpinnerStates.WARNING)
-            if state_changed:
-                self._head_out()
+            # Note: This will not do anything if the state was already set to
+            # ERROR.
+            self._change_state(state=SpinnerStates.WARNING)
 
     def _spin(self):
         while not self._stop_spin.is_set():
             spin_phase = next(self._cycle)
-            self._frame = spin_phase
-
-            header = HeaderItem(
-                frame=spin_phase,
-                text=self._text,
-                state=self._state,
-                color=self._color,
-            )
-            self._put_header(header)
+            self._change(frame=spin_phase)
 
     def _consume(self):
         while True:
@@ -247,59 +230,28 @@ class SpinnerGroup(SpinnerControl):
             self._update_display(item[1])
             self.queue.task_done()
 
-    def _put_header(self, header):
-        ct = self.counter['header']
-        self.queue.put(((1, ct), header))
-        self.counter['header'] += 1
+    def _change(self, state=None, text=None, frame=None, priority=None):
 
-    def _put_line(self, line):
-        ct = self.counter['line']
-        self.queue.put(((0, ct), line))
-        self.counter['line'] += 1
+        state = state or SpinnerStates.NOTSET
 
-    def _update_display(self, item):
-        if item.type == 'header':
-            self.counter['header'] += 1
-            self._head_out(item)
-        else:
-            self.counter['line'] += 1
-            self._line_out(item)
+        state_changed = self._change_state(state)
+        frame_changed = self._change_frame(frame)
+        text_changed = self._change_text(text)
 
-    def _line_out(self, line):
+        header = HeaderItem(
+            text=self._text,
+            state=self._state,
+            frame=self._frame,
+            color=self._color,
+        )
+        self._put(header, priority=priority)
 
-        message = line.format(base_indent=self._base_indent)
-        with self._stdout_lock:
+        if frame_changed:
+            time.sleep(self._interval)
 
-            self.to_bottom()
-            self.print(message)
-            self.lines += 1
-            self.to_top()
+        return (state_changed, text_changed, frame_changed)
 
-            if self._print_interval:
-                time.sleep(self._print_interval)
-
-    def _head_out(self, item):
-        """
-        Updates the top level header of the spinner group when either the header
-        text changes or the spinner phase changes.
-
-        [x] TODO:
-        --------
-        Wait until last frame to display state of last line.
-        """
-        output = item.format(base_indent=self._base_indent)
-
-        if self._initial:
-            with self._stdout_lock:
-                self.print(output)
-                self.lines += 1
-                self._initial = False
-        else:
-            with self._stdout_lock:
-                self.to_top()
-                self.overwrite(output)
-
-    def _change_text(self, text=None):
+    def _change_text(self, text):
         """
         Changes the text in the header line immediately.
         """
@@ -309,7 +261,17 @@ class SpinnerGroup(SpinnerControl):
                 return True
         return False
 
-    def _change_state(self, state=None):
+    def _change_frame(self, frame):
+        """
+        Changes the text in the header line immediately.
+        """
+        if frame:
+            if frame != self._frame:
+                self._frame = frame
+                return True
+        return False
+
+    def _change_state(self, state):
         """
         Changes the overall state of the spinnner group if the provided state
         is more severe (higher level) than the existing state.
@@ -339,6 +301,56 @@ class SpinnerGroup(SpinnerControl):
                     return True
         return False
 
+    def _put(self, item, priority=None):
+        """
+        Tuple comparison breaks for equal tuples in Python3, have to use counter
+        to ensure no tuples exactly the same.1
+        """
+        if not priority:
+            ct = self.counter[item.type]
+            priority = (item.priority, ct)
+            self.counter[item.type] += 1
+        self.queue.put((priority, item))
+
+    def _update_display(self, item):
+        if item.type == 'header':
+            self._head_out(item)
+        else:
+            self._line_out(item)
+
+    def _line_out(self, line):
+        message = line.format(base_indent=self._base_indent)
+
+        with self._stdout_lock:
+            self.to_bottom()
+            self.print(message)
+            self.lines += 1
+            self.to_top()
+
+            if self._print_interval:
+                time.sleep(self._print_interval)
+
+    def _head_out(self, item):
+        """
+        Updates the top level header of the spinner group when either the header
+        text changes or the spinner phase changes.
+
+        [x] TODO:
+        --------
+        Wait until last frame to display state of last line.
+        """
+        output = item.format(base_indent=self._base_indent)
+
+        if self._initial:
+            with self._stdout_lock:
+                self.print(output)
+                self.lines += 1
+                self._initial = False
+        else:
+            with self._stdout_lock:
+                self.to_top()
+                self.overwrite(output)
+
     def __repr__(self):
         repr_ = u"<Spinner frames={0!s}>".format(self._frames)
         if PY2:
@@ -365,7 +377,8 @@ class Spinner(object):
         # make this property dynamic/settable.
         self._spinner = default_spinner
 
-        self._interval = (interval or self._spinner.interval) * 0.001  # Milliseconds to Seconds
+        # self._interval = (interval or self._spinner.interval) * 0.001  # Milliseconds to Seconds
+        self._interval = (interval or 100) * 0.001  # Milliseconds to Seconds
         self._print_interval = print_interval * 0.001 if print_interval else 0  # Milliseconds to Seconds
 
     @contextlib.contextmanager
@@ -381,21 +394,8 @@ class Spinner(object):
         self._groups.append(group)
         try:
             yield group
+        except Exception as e:
+            group.error(str(e))
+            raise e
         finally:
             group.done()
-
-    def __call__(self, fn):
-        @functools.wraps(fn)
-        def inner(*args, **kwargs):
-            with self:
-                return fn(*args, **kwargs)
-        return inner
-
-    @property
-    def color(self):
-        return self._color
-
-    @color.setter
-    def color(self, value):
-        for group in self._groups:
-            group.color = value
