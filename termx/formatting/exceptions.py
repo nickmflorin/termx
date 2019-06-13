@@ -1,4 +1,4 @@
-from ..exceptions import TermxException
+from termx.exceptions import TermxException
 
 
 class FormatException(TermxException):

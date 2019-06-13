@@ -7,8 +7,8 @@ import shutil
 # TODO: Remove dependencies
 from instattack.config import constants
 
-from ..compat import safe_text
-from ..utils import measure_ansi_string
+from termx.compat import safe_text
+from termx.utils import measure_ansi_string
 
 # TODO: More consistent color setting scheme with project.
 from .termcolor import colored

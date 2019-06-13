@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import contextlib
 
-from ...utils import humanize_list, string_format_tuple
+from termx.utils import humanize_list, string_format_tuple
 from .decoration import Decoration
 from .utils import get_format, get_value
 

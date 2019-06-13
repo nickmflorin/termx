@@ -5,7 +5,7 @@ from typing import Optional
 from textwrap import TextWrapper
 import os
 
-from ...utils import measure_ansi_string
+from termx.utils import measure_ansi_string
 from .utils import get_format
 
 

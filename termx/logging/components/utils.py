@@ -1,11 +1,11 @@
 import plumbum
 from plumbum import colors
 
-from ...utils import ensure_list
-from ...formatting import Format
-from ...formatting.exceptions import InvalidColor
+from termx.utils import ensure_list
+from termx.formatting import Format
+from termx.formatting.exceptions import InvalidColor
 
-from ..exceptions import InvalidCallable
+from termx.logging.exceptions import InvalidCallable
 
 
 def get_obj_attribute(obj, param):

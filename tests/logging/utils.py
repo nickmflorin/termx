@@ -1,6 +1,6 @@
 from termx import colors
 from termx.formatting import Format
-from termx.logging.utils import get_value, get_format
+from termx.logging.components.utils import get_value, get_format
 
 
 def test_get_value_invalid_attrs(make_mock_object, make_record):

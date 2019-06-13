@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from ...utils import escape_ansi_string
-from ..exceptions import InvalidElement
+from termx.utils import escape_ansi_string
+from termx.logging.exceptions import InvalidElement
 from .core import Core
 
 

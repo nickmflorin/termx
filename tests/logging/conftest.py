@@ -2,7 +2,7 @@ import logging
 import pytest
 
 from termx import colors
-from termx.termx.formatting import Format
+from termx.formatting import Format
 
 
 level = 'info'
