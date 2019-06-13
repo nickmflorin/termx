@@ -1,3 +1,5 @@
-from .spinner import Spinner  # noqa
-from .cursor import Cursor  # noqa
-from .utils import *  # noqa
+"""
+This initialization file is only temporary, and is meant to expose the package
+without setuptools to the containing intattack repository.
+"""
+from .termx import *  # noqa

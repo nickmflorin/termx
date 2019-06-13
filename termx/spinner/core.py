@@ -6,7 +6,7 @@ import threading
 import time
 from queue import PriorityQueue
 
-from ..cursor import Cursor
+from ..terminal import Cursor
 from ..compat import safe_text, PY2, ENCODING
 
 from .utils import get_frames

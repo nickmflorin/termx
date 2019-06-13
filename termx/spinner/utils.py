@@ -1,7 +1,7 @@
-from .constants import COLOR_MAP
 from ..compat import ( # noqa
     PY2, basestring, builtin_str, bytes, iteritems, str, safe_text, to_unicode,
     ENCODING)
+from .constants import COLOR_MAP
 
 
 def get_frames(spinner):
