@@ -1,46 +1,40 @@
-from .constants import COLOR_MAP
-from .compat import ( # noqa
-    PY2, basestring, builtin_str, bytes, iteritems, str, safe_text, to_unicode,
-    ENCODING)
+import re
 
 
-def get_frames(spinner):
+def escape_ansi_string(value):
+    ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+    return ansi_escape.sub('', value)
+
+
+def measure_ansi_string(value):
+    bare = escape_ansi_string(value)
+    return len(bare)
+
+
+def percentage(num1, num2):
+    return f"{'{0:.2f}'.format((num1 / num2 * 100))} %"
+
+
+def progress(num1, num2):
+    return f"{num1}/{num2} ({'{0:.2f} %)'.format((num1 / num2 * 100))}"
+
+
+def humanize_list(value, callback=str, conjunction='and', oxford_comma=True):
     """
-    [x] NOTE:
-    --------
-    We don't really have to worry about this method for the time being, since
-    we are using a default spinner for all cases.  Although, if we expand
-    to be like Yaspin, we will need this functionality expanded.
-
-    type: (base_spinner.Spinner, bool) -> Union[str, List]
+    Turns an interable list into a human readable string.
+    >>> list = ['First', 'Second', 'Third', 'fourth']
+    >>> humanize_list(list)
+    u'First, Second, Third, and fourth'
+    >>> humanize_list(list, conjunction='or')
+    u'First, Second, Third, or fourth'
     """
-    if spinner.frames:
-        if isinstance(spinner.frames, basestring):
-            frames = spinner.frames
-            if PY2:
-                frames = to_unicode(spinner.frames)
-            return frames
 
-        # TODO: Support Any Type That Supports Iterable
-        if isinstance(spinner.frames, (list, tuple)):
-            frames = spinner.frames
-            if isinstance(spinner.frames[0], bytes):
-                frames = [to_unicode(frame) for frame in spinner.frames]
-            return frames
-
-    else:
-        raise ValueError("{0!r}: No Frames Found for Spinner".format(spinner))
-
-
-def get_color(value):
-    """
-    [x] TODO:
-    --------
-    Replace with more consistent color formatting scheme, one consistent
-    with artsylogger or change artsylogger to use more consistent color
-    scheme.
-    """
-    available_values = [k for k, v in iteritems(COLOR_MAP) if v == "color"]
-    if value not in available_values:
-        raise ValueError(f"{value} Unsupportd Color Value")
-    return value
+    num = len(value)
+    if num == 0:
+        return ""
+    elif num == 1:
+        return callback(value[0])
+    s = u", ".join(map(callback, value[:num - 1]))
+    if len(value) >= 3 and oxford_comma is True:
+        s += ","
+    return "%s %s %s" % (s, conjunction, callback(value[num - 1]))

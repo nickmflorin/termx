@@ -8,11 +8,12 @@ import shutil
 from instattack.config import constants
 from instattack.lib.utils import measure_ansi_string
 
+from ..compat import safe_text
+
 # TODO: More consistent color setting scheme with project.
 from .termcolor import colored
 from .constants import INDENT_COUNT
 from .utils import get_color
-from .compat import safe_text
 
 
 class SpinnerStates(Enum):

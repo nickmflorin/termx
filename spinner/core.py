@@ -7,9 +7,9 @@ import threading
 import time
 from queue import PriorityQueue
 
-from .compat import PY2, ENCODING
-from .cursor import Cursor
-from .compat import safe_text
+from ..cursor import Cursor
+from ..compat import safe_text, PY2, ENCODING
+
 from .utils import get_frames
 from .models import HeaderItem, LineItem, SpinnerStates
 
