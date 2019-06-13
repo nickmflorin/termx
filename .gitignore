@@ -1,0 +1,14 @@
+*.DS_Store
+*.pyc
+*.txt
+*.db
+
+/users
+__pycache__
+.pytest_cache
+build
+dist
+env
+
+termx.egg-info
+termx.egg-info/*
