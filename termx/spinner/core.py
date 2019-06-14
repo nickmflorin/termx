@@ -13,6 +13,11 @@ from .utils import get_frames
 from .models import HeaderItem, LineItem, SpinnerStates
 
 
+# TODO: Allow these properties to be configurable
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+INDENT_COUNT = 2
+
+
 # TODO: Maybe add additional spinners, right now we only care about one for
 # simplicity.
 Spinner = collections.namedtuple("Spinner", "frames interval")

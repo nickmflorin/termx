@@ -46,8 +46,12 @@ class formatter(object):
         For this case, we could just do colors.fg(...).ansi_sequence, but we want to
         start removing reliance on plumbum's library.
         """
-        return ANSI_CHAR(*self.ansi_codes)
+        if len(self.ansi_codes) != 0:
+            return ANSI_CHAR(*self.ansi_codes)
+        return ""
 
     @property
     def _formatter(self):
-        return self._ansi_sequence + "%s" + RESET
+        if self._ansi_sequence:
+            return self._ansi_sequence + "%s" + RESET
+        return "%s"

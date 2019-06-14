@@ -9,9 +9,6 @@ from termx.compat import safe_text
 from termx.utils import measure_ansi_string
 from termx.formatting import Formats, shaded_level
 
-# TODO: More consistent color setting scheme with project.
-from .constants import INDENT_COUNT, DATE_FORMAT
-
 
 class SpinnerStates(Enum):
 
@@ -66,6 +63,8 @@ class LineItem:
         self._options = LineItemOptions(**options)
 
     def _indentation(self, base_indent=0):
+        from .core import INDENT_COUNT
+
         indent_count = (self._indent + 1) + base_indent
         num_spaces = indent_count * INDENT_COUNT
         return num_spaces * " "
@@ -219,6 +218,8 @@ class LineItem:
 
         (Empty spaces denoted with "_")
         """
+        from .core import DATE_FORMAT
+
         message = self._indentation(base_indent=base_indent) + self._bulleted
         if not self._options.show_datetime:
             return safe_text(message)
@@ -247,6 +248,8 @@ class HeaderItem:
     priority: int = 1  # "Lower" Than Line Items
 
     def _indentation(self, base_indent=0):
+        from .core import INDENT_COUNT
+
         num_spaces = (base_indent + self.indent) * INDENT_COUNT
         return num_spaces * " "
 

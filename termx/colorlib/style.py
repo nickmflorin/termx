@@ -16,7 +16,6 @@ class StyleMeta(type):
         ]
 
     def __getattr__(cls, name):
-        print('Getting Class Attr %s' % name)
         try:
             code = cls.code_for(name)
         except InvalidStyle:
@@ -228,7 +227,7 @@ class style(formatter, metaclass=StyleMeta):
             if strict:
                 raise ValueError('Style %s already exists in object.' % name)
         else:
-            code = self.code_for(name)
+            code = self.code_for(style_or_code)
             self.styles = self.styles + (code, )
 
     def remove_style(self, style_or_code, strict=True):
