@@ -1,32 +1,52 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field, InitVar
 from datetime import datetime
 from enum import Enum
-import functools
 import shutil
+import typing
 
-# TODO: Remove dependencies
-from instattack.config import constants
-
+from termx.colorlib import color
 from termx.compat import safe_text
 from termx.utils import measure_ansi_string
+from termx.formatting import Formats, shaded_level
 
 # TODO: More consistent color setting scheme with project.
-from .termcolor import colored
-from .constants import INDENT_COUNT
-from .utils import get_color
+from .constants import INDENT_COUNT, DATE_FORMAT
 
 
 class SpinnerStates(Enum):
 
-    NOTSET = ("Not Set", constants.Formats.State.NOTSET, 0)
-    OK = ("Ok", constants.Formats.State.SUCCESS, 1)
-    WARNING = ("Warning", constants.Formats.State.WARNING, 2)
-    FAIL = ("Failed", constants.Formats.State.FAIL, 3)
+    NOTSET = ("Not Set", Formats.State.NOTSET, 0)
+    OK = ("Ok", Formats.State.SUCCESS, 1)
+    WARNING = ("Warning", Formats.State.WARNING, 2)
+    FAIL = ("Failed", Formats.State.FAIL, 3)
 
-    def __init__(self, desc, fmt, level):
-        self.desc = desc
+    def __init__(self, label, fmt, level):
+        self.label = label
         self.fmt = fmt
         self.level = level
+
+    @property
+    def icon(self):
+        return self.fmt.icon
+
+
+@dataclass
+class LineItemOptions:
+
+    show_icon: bool = True
+    label: typing.Union[int, str] = None
+
+    # If color_icon = False, or color_bullet = False, the icon or bullet will be
+    # "shaded" based on the indentation level.
+    color_bullet: bool = False  # TODO: Allow string or bool, string sets color.
+    color_icon: bool = True  # TODO: Allow string or bool, string sets color.
+    color_label: bool = False  # TODO: Allow string or bool, string sets color.
+
+    indent: bool = False  # Additional Indent for Line
+    show_datetime: bool = True
+
+    # Validate that the length of the bullet is 1 character.
+    bullet: typing.Optional[str] = '>'
 
 
 @dataclass
@@ -38,22 +58,125 @@ class LineItem:
     indent: int = 0
     priority: int = 0  # "Higher" Than Header Items
 
+    options: InitVar[LineItemOptions] = None
+    _options: LineItemOptions = field(init=False)
+
+    def __post_init__(self, options):
+        options = options or {}
+        self._options = LineItemOptions(**options)
+
     def _indentation(self, base_indent=0):
-        indent_count = (self.indent + 1) + base_indent
+        indent_count = (self._indent + 1) + base_indent
         num_spaces = indent_count * INDENT_COUNT
         return num_spaces * " "
 
+    @property
+    def _indent(self):
+        if self._options.indent:
+            return self.indent + 1
+        return self.indent
+
+    @property
+    def _label_shade(self):
+        return shaded_level(self._indent, dark_limit=1)
+
+    @property
+    def _text_shade(self):
+        return shaded_level(self._indent, dark_limit=2)
+
+    @property
+    def _bullet_shade(self):
+        return shaded_level(self._indent, dark_limit=3)
+
+    @property
+    def _icon_shade(self):
+        return shaded_level(self._indent, dark_limit=4)
+
+    @property
+    def _text(self):
+        fmt = shaded_level(self._indent, dark_limit=1)
+        return fmt(self.text)
+
+    @property
+    def _label(self):
+        if self._options.label:
+            if type(self._options.label) is bool and self.state != SpinnerStates.NOTSET:
+                return self.state.label
+            elif type(self._options.label) is str:
+                return self._options.label
+        return None
+
+    @property
+    def _formatted_label(self):
+        """
+        Color Label = False means that we are not coloring based on the state
+        if the state is set, it is still "shaded" for the indentation level.
+
+        [x] TODO:
+        --------
+        If `color_label` is a string, color based on that color.
+        """
+        if self._label:
+            if self._options.color_label:
+                if type(self._options.color_label) is str:
+                    color_ = color(self._options.color_label)
+                    return color_(self._label)
+
+                if self.state != SpinnerStates.NOTSET:
+                    return self.state.fmt.apply_color(self._label)
+
+            return self._label_shade(self._label)
+
+    @property
+    def _formatted_text(self):
+        """
+        [x] TODO:
+        --------
+        If `color_label` is a string, color based on that color.
+        """
+        if self._formatted_label:
+            return "%s: %s" % (self._formatted_label, self._text)
+        return self.text
+
+    @property
     def _bullet(self):
         """
         Determines the bullet to apply to a given non header line based on
         the state of that written line.
-        """
-        if self.state == SpinnerStates.NOTSET:
-            pointer_color = constants.Formats.Pointer.get_hierarchal_format(self.indent)
-            return pointer_color(">")
-        else:
-            return self.state.fmt.without_icon()(self.state.fmt.icon)
 
+        [x] TODO:
+        --------
+        Add options to format the bullet.
+        Validate that the length of the bullet is 1 character.
+        If `color_bullet` is a string, color based on that color.
+        """
+        state_fmt = self.state.fmt.apply_color
+
+        if self._options.show_icon and self.state != SpinnerStates.NOTSET:
+
+            if self._options.color_icon:
+                if type(self._options.color_icon) is str:
+                    color_ = color(self._options.color_icon)
+                    return color_(self.state.icon)
+                else:
+                    return state_fmt(self.state.icon)
+            else:
+                return self._icon_shade(self.state.icon)
+
+        elif self._options.bullet:
+            # We Do Not Color Bullet for NOTSET Cases
+            if self._options.color_bullet and self.state != SpinnerStates.NOTSET:
+                if type(self._options.color_bullet) is str:
+                    color_ = color(self._options.color_bullet)
+                    return color_(self._options.bullet)
+                else:
+                    return state_fmt(self._options.bullet)
+            else:
+                return self._bullet_shade(self._options.bullet)
+
+        return ""
+
+    @property
     def _bulleted(self):
         """
         Only applicable for non-header lines (lines that are not the first in
@@ -74,8 +197,7 @@ class LineItem:
         We only want to style the pointer based on the state, and style the
         text based on the hierarchy.
         """
-        text_format = constants.Formats.Text.get_hierarchal_format(self.indent)
-        return "%s %s" % (self._bullet(), text_format(self.text))
+        return "%s %s" % (self._bullet, self._formatted_text)
 
     def format(self, base_indent=0):
         """
@@ -97,12 +219,14 @@ class LineItem:
 
         (Empty spaces denoted with "_")
         """
-        message = self._indentation(base_indent=base_indent) + self._bulleted()
+        message = self._indentation(base_indent=base_indent) + self._bulleted
+        if not self._options.show_datetime:
+            return safe_text(message)
 
-        date_message = constants.Formats.Text.FADED.with_wrapper("[%s]")(
-            datetime.now().strftime(constants.DATE_FORMAT)
+        # TODO: Make DATE_FORMAT Configurable, Make FADED Format Configurable
+        date_message = Formats.Text.FADED.with_wrapper("[%s]")(
+            datetime.now().strftime(DATE_FORMAT)
         )
-
         columns, _ = shutil.get_terminal_size(fallback=(80, 24))
         separated = (" " * (columns - 5 - measure_ansi_string(date_message) -
             measure_ansi_string(message)))
@@ -135,8 +259,7 @@ class HeaderItem:
         with artsylogger or change artsylogger to use more consistent color
         scheme.
         """
-        color = get_color(self.color)
-        return functools.partial(colored, color=color)
+        return color(self.color)
 
     def format(self, base_indent=0):
         designator = None

@@ -176,7 +176,7 @@ class SpinnerGroup(SpinnerControl):
         self.to_bottom()
         self.move_down()
 
-    def write(self, text, state=None):
+    def write(self, text, state=None, options=None):
         """
         Write a message underneath the last written message waithout changing
         the top level text or spinner.
@@ -186,7 +186,7 @@ class SpinnerGroup(SpinnerControl):
         state = state or SpinnerStates.NOTSET
         self._change(state)
 
-        line = LineItem(text=text, state=state)
+        line = LineItem(text=text, state=state, options=options)
         self._put(line)
 
     """
@@ -209,9 +209,9 @@ class SpinnerGroup(SpinnerControl):
         else:
             self._change_state(state=SpinnerStates.FAIL)
 
-    def warning(self, text=None):
+    def warning(self, text=None, options=None):
         if text:
-            self.write(text, state=SpinnerStates.WARNING)
+            self.write(text, state=SpinnerStates.WARNING, options=options)
         else:
             # Note: This will not do anything if the state was already set to
             # ERROR.

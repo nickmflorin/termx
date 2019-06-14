@@ -8,8 +8,3 @@ class FormatException(TermxException):
 class InvalidFormat(FormatException):
     def __init__(self, value):
         self.__message__ = f"The format {value} is invalid."
-
-
-class InvalidColor(FormatException):
-    def __init__(self, value):
-        self.__message__ = f"The color {value} is invalid."

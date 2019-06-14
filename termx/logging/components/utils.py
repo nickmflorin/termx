@@ -1,7 +1,7 @@
 import plumbum
 from plumbum import colors
 
-from termx.utils import ensure_list
+from termx.utils import ensure_iterable
 from termx.formatting import Format
 from termx.formatting.exceptions import InvalidColor
 
@@ -53,7 +53,7 @@ def get_record_attribute(record, params):
     >>> 'Jack'
     """
     # TODO: Need to catch more singletons here.
-    params = ensure_list(params)
+    params = ensure_iterable(params)
     params = ["%s" % param for param in params]
 
     # Here, each param can be something like "context.index", or "index"

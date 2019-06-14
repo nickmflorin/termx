@@ -1,183 +1,92 @@
 import contextlib
-from plumbum import colors
+
+from termx.colorlib import color as _color, _style
 
 from .exceptions import FormatException
+from .mixins import IconMixin, WrapperMixin
 
 
-__all__ = (
-    'Format',
-)
+class Format(IconMixin, WrapperMixin):
 
+    def __init__(
+        self,
+        color=None,
+        styles=None,
+        # background = None,
+        wrapper=None,
+        format_with_wrapper=False,
+        icon=None,
+        icon_before=None,
+        icon_after=None,
+        format_with_icon=True,
+    ):
+        """
+        [x] TODO:
+        --------
+        We eventually want to deprecate (I think) the keyword argument specifications
+        for `bold` and `underline` and instead initialize as:
+        >>> styles=['bold', 'underline']
 
-class IconMixin(object):
+        The color will eventually be initialized with the background color as
+        well.
+        """
+        self._color = _color(color)
+        self._style = _style(*(styles or []))
 
-    def __init__(self, icon=None, icon_before=None, icon_after=None, format_with_icon=True):
-        self.icon = self.icon_before = self.icon_after = None
-        self.format_with_icon = format_with_icon
-        if icon:
-            self.add_icon(
-                icon=icon,
-                icon_before=icon_before,
-                icon_after=icon_after,
-                format_with_icon=format_with_icon,
-            )
+        IconMixin.__init__(self, icon=icon, icon_before=icon_before, icon_after=icon_after, format_with_icon=format_with_icon)
+        WrapperMixin.__init__(self, wrapper=wrapper, format_with_wrapper=format_with_wrapper)
 
-    def _iconize(self, text):
-        if self.icon:
-            if self._icon_before:
-                return "%s %s" % (self.icon, text)
-            return "%s %s" % (text, self.icon)
+    def __call__(self, text, **overrides):
+        """
+        Performs the formatting on the provided text.
+
+        Overrides can be specified to temporarily set the attributes on the
+        format object just for the call.
+
+        Colors should not be specified in the overrides...
+        """
+        text = "%s" % text
+
+        with self._temporary_override(**overrides):
+            # Apply icon and wrapper before and/or after formatting depending
+            # on values of `format_with_wrapper` and `format_with_icon`.
+            wrapper_bounds = self.format_bounds(self.wrapper, self.format_with_wrapper, self._wrap)
+            icon_bounds = self.format_bounds(self.icon, self.format_with_icon, self._iconize)
+            text = icon_bounds(wrapper_bounds(self._format))(text)
+
         return text
 
-    def remove_icon(self):
-        self.icon = self.icon_after = self.icon_before = None
+    def _format(self, text):
+        text = self.color(text)
+        return self.style(text)
 
-    def add_icon(self, icon, icon_before=None, icon_after=None, format_with_icon=True):
-        self.icon = icon
-        self.icon_after = icon_after
-        self.icon_before = icon_before
-        self.format_with_icon = format_with_icon
+    def color(self, text):
+        return self._color(text)
 
-    def with_icon(self, icon, icon_before=None, icon_after=None, format_with_icon=True):
-        """
-        Creates and returns a copy of the Format instance with the icon.
-        """
-        fmt = self.copy()
-        fmt.add_icon(icon, icon_before=icon_before, icon_after=icon_after,
-            format_with_icon=format_with_icon)
-        return fmt
+    def style(self, text):
+        return self._style(text)
 
-    def without_icon(self):
-        """
-        Creates and returns a copy of the Format instance without an icon.
-        """
-        fmt = self.copy()
-        fmt.remove_icon()
-        return fmt
+    def add_style(self, style_name):
+        if not self._style.has_style(style_name):
+            self._style.add_style(style_name)
 
-    @property
-    def __icon_dict__(self):
-        return {
-            'icon': self.icon,
-            'icon_before': self.icon_before,
-            'icon_after': self.icon_after,
-            'format_with_icon': self.format_with_icon
-        }
-
-    @property
-    def _icon_before(self):
-        """
-        Whether or not to place the icon before the text.  Defaults to True
-        if neither `icon_before` or `icon_after` are set.
-        """
-        if self.icon_before is None and self.icon_after is None:
-            return True
-        elif self.icon_before is None:
-            return not self.icon_after
-        else:
-            return self.icon_before
-
-    @property
-    def _icon_after(self):
-        """
-        Whether or not to place the icon after the text.  Defaults to False
-        if neither `icon_before` or `icon_after` are set.
-        """
-        if self.icon_before is None and self.icon_after is None:
-            return False
-        elif self.icon_after is None:
-            return not self.icon_before
-        else:
-            return self.icon_before
-
-
-class WrapperMixin(object):
-
-    def __init__(self, wrapper=None, format_with_wrapper=None):
-        self.wrapper = wrapper
-        self.format_with_wrapper = format_with_wrapper
-
-    @property
-    def __wrapper_dict__(self):
-        return {
-            'wrapper': self.wrapper,
-            'format_with_wrapper': self.format_with_wrapper,
-        }
-
-    def _wrap(self, text):
-        return self.wrapper % text
-
-    def add_wrapper(self, wrapper, format_with_wrapper=False):
-        self.wrapper = wrapper
-        self.format_with_wrapper = format_with_wrapper
-
-    def remove_wrapper(self):
-        self._wrapper = None
-        self._format_with_wrapper = False
-
-    def with_wrapper(self, wrapper, format_with_wrapper=None):
-        fmt = self.copy()
-        fmt._wrapper = wrapper
-
-        # Preserve Format with Wrapper if Not Specified
-        fmt._format_with_wrapper = format_with_wrapper
-        if fmt._format_with_wrapper is None:
-            fmt._format_with_wrapper = self.format_with_wrapper
-        return fmt
-
-    def without_wrapping(self):
-        fmt = self.copy()
-        fmt.remove_wrapper()
-        return fmt
-
-
-class DecorativeMixin(object):
-
-    DECORATIONS = [colors.underline, colors.bold]
-
-    def __init__(self, bold=False, underline=False):
-        if bold:
-            self.add_bold()
-        if underline:
-            self.add_underline()
-
-    @property
-    def is_bold(self):
-        return colors.bold in self._colors
-
-    @property
-    def is_underline(self):
-        return colors.underline in self._colors
-
-    def add_bold(self):
-        if not self.is_bold:
-            self._colors.append(colors.bold)
-
-    def add_underline(self):
-        if not self.is_underline:
-            self._colors.append(colors.underline)
-
-    def remove_bold(self):
-        if self.is_bold:
-            self._colors.remove(colors.bold)
-
-    def remove_underline(self):
-        if self.is_underline:
-            self._colors.remove(colors.underline)
+    def remove_style(self, style_name):
+        if self._style.has_style(style_name):
+            self._style.remove_style(style_name)
 
     def remove_text_decoration(self):
-        if self.is_bold or self.is_underline:
-            self.remove_underline()
-            self.remove_bold()
+        """
+        [x] TODO:
+        --------
+        Should we be more selective in how we use this, and only remove styles
+        that are more specific to things like underline, bold, strikethrough,
+        etc.?
+        """
+        self._style.clear_decoration()
 
-    def with_underline(self):
+    def with_style(self, style_name):
         fmt = self.copy()
-        fmt.add_underline()
-        return fmt
-
-    def with_bold(self):
-        fmt = self.copy()
-        fmt.add_bold()
+        fmt.add_style(style_name)
         return fmt
 
     def without_text_decoration(self):
@@ -185,26 +94,20 @@ class DecorativeMixin(object):
         fmt.remove_text_decoration()
         return fmt
 
+    def copy(self, **overrides):
+        """
+        [x] TODO:
+        --------
+        Possibly Deprecate
 
-class Format(IconMixin, WrapperMixin, DecorativeMixin):
-
-    def __init__(
-        self,
-        *args,
-        wrapper=None,
-        format_with_wrapper=False,
-        icon=None,
-        icon_before=None,
-        icon_after=None,
-        format_with_icon=True,
-        bold=False,
-        underline=False,
-    ):
-        self._colors = list(args)
-
-        IconMixin.__init__(self, icon=icon, icon_before=icon_before, icon_after=icon_after, format_with_icon=format_with_icon)
-        WrapperMixin.__init__(self, wrapper=wrapper, format_with_wrapper=format_with_wrapper)
-        DecorativeMixin.__init__(self, bold=bold, underline=underline)
+        [x] IMPORTANT
+        -------------
+        This might cause issues depending on the mutability of the style
+        and color objects!
+        """
+        data = self.__dict__.copy()
+        data.update(**overrides)
+        return Format(**data)
 
     def format_bounds(self, element, format_with, formatter):
         """
@@ -237,61 +140,36 @@ class Format(IconMixin, WrapperMixin, DecorativeMixin):
             return wrapped
         return decorator
 
-    def __call__(self, text, **overrides):
-        """
-        Performs the formatting on the provided text.
-        Overrides can be specified to temporarily set the attributes on the
-        format object just for the call.
-        Colors should not be specified in the overrides...
-        """
-        text = "%s" % text
-
-        with self._temporary_override(**overrides):
-
-            # Apply icon and wrapper before and/or after formatting depending
-            # on values of `format_with_wrapper` and `format_with_icon`.
-            wrapper_bounds = self.format_bounds(self.wrapper, self.format_with_wrapper, self._wrap)
-            icon_bounds = self.format_bounds(self.icon, self.format_with_icon, self._iconize)
-            text = icon_bounds(wrapper_bounds(self._colorize))(text)
-
-        return text
-
-    def _colorize(self, text):
-        c = colors.do_nothing
-        for i in range(len(self._colors)):
-            c = c & self._colors[i]
-        return (c | text)
-
     @contextlib.contextmanager
     def _temporary_override(self, **overrides):
         """
         Temporarily overrides the instance with values provided on __call__
         so that the values can be used to format the text without mutating
         the original Format instance.
+
+        [x] IMPORTANT
+        -------------
+        This might cause issues depending on the mutability of the style
+        and color objects!
         """
         original = self.__dict__.copy()
-        del original['colors']
 
-        remove_bold = remove_underline = False
-        add_bold = add_underline = False
+        # I don't think we need this since we set the original style object
+        # afterwards.
+        # post_add_styles = []
+        # post_remove_styles = []
 
         try:
+            # We allow the style attributes to be changed to be passed in as
+            # keyword arguments with boolean values.
             for key, val in overrides.items():
-                if key == 'bold':
-                    if val is True and not self.is_bold:
-                        remove_bold = True
-                        self.add_bold()
-                    elif val is False and self.is_bold:
-                        add_bold = True
-                        self.remove_bold()
-
-                elif key == 'underline':
-                    if val is True and not self.is_underline:
-                        remove_underline = True
-                        self.add_underline()
-                    elif val is False and self.is_underline:
-                        add_underline = True
-                        self.remove_underline()
+                if _style.supported(key):
+                    if val is True:
+                        # post_remove_styles.append(key)
+                        self._style.add_style(key, strict=False)
+                    elif val is False:
+                        # post_add_styles.append(key)
+                        self._style.remove_style(key, strict=False)
                 else:
                     try:
                         setattr(self, key, val)
@@ -305,47 +183,3 @@ class Format(IconMixin, WrapperMixin, DecorativeMixin):
                     setattr(self, key, val)
                 except AttributeError:
                     raise FormatException(f'Invalid format attribute {key}.')
-
-            if add_bold:
-                self.add_bold()
-            elif remove_bold:
-                self.remove_bold()
-
-            if add_underline:
-                self.add_underline()
-            elif remove_underline:
-                self.remove_underline()
-            return None
-
-    @property
-    def colors(self):
-        return [
-            c for c in self._colors
-            if c not in self.DECORATIONS
-        ]
-
-    @property
-    def __dict__(self):
-        base_dict = {'colors': self._colors}
-        base_dict.update(**self.__wrapper_dict__)
-        base_dict.update(**self.__icon_dict__)
-        return base_dict
-
-    def copy(self, **overrides):
-        data = self.__dict__.copy()
-        data.update(**overrides)
-        colors = data.pop('colors')
-        return Format(*colors, **data)
-
-    def format_with(self, *args, **kwargs):
-        """
-        Returns a copy of the original Format instance with additional colors
-        and options specified.
-        """
-        new_colors = []
-        for arg in args:
-            if arg not in self._colors:
-                new_colors.append(arg)
-        colors = list(self._colors) + new_colors
-        kwargs['colors'] = colors
-        return self.copy(**kwargs)

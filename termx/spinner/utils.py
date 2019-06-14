@@ -1,7 +1,6 @@
 from termx.compat import ( # noqa
     PY2, basestring, builtin_str, bytes, iteritems, str, safe_text, to_unicode,
     ENCODING)
-from .constants import COLOR_MAP
 
 
 def get_frames(spinner):
@@ -30,17 +29,3 @@ def get_frames(spinner):
 
     else:
         raise ValueError("{0!r}: No Frames Found for Spinner".format(spinner))
-
-
-def get_color(value):
-    """
-    [x] TODO:
-    --------
-    Replace with more consistent color formatting scheme, one consistent
-    with artsylogger or change artsylogger to use more consistent color
-    scheme.
-    """
-    available_values = [k for k, v in iteritems(COLOR_MAP) if v == "color"]
-    if value not in available_values:
-        raise ValueError(f"{value} Unsupportd Color Value")
-    return value

@@ -1,31 +1,6 @@
+# TODO: Allow these properties to be configurable
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 INDENT_COUNT = 2
-
-# -*- coding: utf-8 -*-
-COLOR_MAP = {
-    # name: type
-    "blink": "attrs",
-    "bold": "attrs",
-    "concealed": "attrs",
-    "dark": "attrs",
-    "reverse": "attrs",
-    "underline": "attrs",
-    "blue": "color",
-    "cyan": "color",
-    "green": "color",
-    "magenta": "color",
-    "red": "color",
-    "white": "color",
-    "yellow": "color",
-    "on_blue": "on_color",
-    "on_cyan": "on_color",
-    "on_green": "on_color",
-    "on_grey": "on_color",
-    "on_magenta": "on_color",
-    "on_red": "on_color",
-    "on_white": "on_color",
-    "on_yellow": "on_color",
-}
-COLOR_ATTRS = COLOR_MAP.keys()
 
 # Get spinner names:
 # $ < yaspin/data/spinners.json | jq '. | keys'
