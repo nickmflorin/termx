@@ -23,8 +23,41 @@ import pathlib
 import subprocess
 
 
+def find_first_parent(path, name):
+    """
+    Given a path and the name of a parent directory, incrementally moves upwards
+    in the filesystem, directory by directory, until either the root is reached
+    (when the parent is not changing) or the directory reached has the desired
+    parent name.
+    """
+    parent = pathlib.PurePath(path)
+
+    while True:
+        new_parent = parent.parent
+        if new_parent.name == name:
+            return new_parent
+        # At the root: PurePosixPath('/'), path.parent = path.parent.parent.
+        elif new_parent == parent:
+            return new_parent
+        else:
+            parent = new_parent
+
+
 def get_root():
-    return os.path.dirname(os.path.realpath(__file__))
+    """
+    Given the path of the file calling the function, incrementally moves up
+    directory by directory until either the root is reached (when the parent
+    is not changing) or the directory reached has the name associated with
+    the app name.
+
+    When we reach the directory associated with the app directory, the root
+    is the path's parent.
+    """
+    from termx import __NAME__
+
+    path = os.path.dirname(os.path.realpath(__file__))
+    parent = find_first_parent(path, __NAME__)
+    return str(parent.parent)
 
 
 def get_app_root():

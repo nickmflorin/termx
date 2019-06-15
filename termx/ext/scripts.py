@@ -12,6 +12,6 @@ in the app, except for top level constants.
 
 def clean():
     from .framework import remove_pybyte_data, get_app_root
-
     root = get_app_root()
+    print('Cleaning %s' % root)
     remove_pybyte_data(root)

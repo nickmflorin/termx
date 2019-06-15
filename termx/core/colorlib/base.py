@@ -12,6 +12,12 @@ def ansi_sequence_from_codes(*codes):
     If we try to import config.constants here to access constants.ANSI_ESCAPE_CHAR,
     we get an issue because config.configure imports colour.py, and colour.py
     imports this file, which would then be importing config.
+
+    [x] TODO
+    --------
+    Note the difference and decide between the use of \x1b and \033.  Also might
+    want to see if there is a way to store in config without circular import
+    issues.
     """
     ANSI_ESCAPE_CHAR = "\x1b"
 
@@ -23,7 +29,6 @@ def ansi_sequence_from_codes(*codes):
         seq = ';'.join(["%s" % code for code in codes])
     else:
         seq = codes[0]
-    # return "%s[%sm" % (constants.ANSI_ESCAPE_CHAR, seq)
     return "%s[%sm" % (ANSI_ESCAPE_CHAR, seq)
 
 

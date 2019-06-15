@@ -117,14 +117,14 @@ def shaded_level(level, bold=False, dark_limit=0, light_limit=None, gradient=1):
     We should come up with an interpolation method that shades between black
     and white depending on a gradient and a certain percentage.
     """
-    from termx.config.style import Colors
+    from termx.config import config
     from termx.core.formatting import Format
     from termx.core.exceptions import FormatError
 
     light_limit = light_limit or 1
     dark_limit = dark_limit or 0
     slc = slice(dark_limit, -1 * light_limit, gradient)
-    shades = Colors.SHADES[slc]
+    shades = config.Colors.SHADES[slc]
 
     if len(shades) == 0:
         raise FormatError('Invalid shade limits.')
