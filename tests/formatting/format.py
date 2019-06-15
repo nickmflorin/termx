@@ -1,21 +1,20 @@
-from termx.colorlib import color
-from termx.formatting import Format
+from termx import Format, color
 
 
 def test_format_with_color():
 
     def initialize_with_string():
-        fmt = Format('blue')
+        fmt = Format(color='blue')
         value = fmt._color('foo')
         assert value == '\x1b[34mfoo\x1b[0m'
 
     def initialize_with_color():
-        fmt = Format(color('blue'))
+        fmt = Format(color=color('blue'))
         value = fmt._color('foo')
         assert value == '\x1b[34mfoo\x1b[0m'
 
     def initialize_with_hex():
-        fmt = Format('#000000')
+        fmt = Format(color='#000000')
         value = fmt._color('foo')
         assert value == '\x1b[38;2;0;0;0mfoo\x1b[0m'
 
@@ -27,12 +26,12 @@ def test_format_with_color():
 def test_format_with_style():
 
     def initialize_with_string():
-        fmt = Format('black', styles=['bold', 'underline'])
+        fmt = Format(color='black', styles=['bold', 'underline'])
         value = fmt('foo')
         assert value == '\x1b[1;4m\x1b[30mfoo\x1b[0m\x1b[0m'
 
     def initialize_with_code():
-        fmt = Format('black', styles=[1, 4])
+        fmt = Format(color='black', styles=[1, 4])
         value = fmt('foo')
         assert value == '\x1b[1;4m\x1b[30mfoo\x1b[0m\x1b[0m'
 
@@ -43,23 +42,23 @@ def test_format_with_style():
 def test_wraps_text():
 
     # Initializing With Wrapper
-    fmt = Format('blue', wrapper="[%s]")
+    fmt = Format(color='blue', wrapper="[%s]")
     value = fmt('foo')
     assert value == "[\x1b[34mfoo\x1b[0m]"
 
     # Initializing With Wrapper & Formatting With Wrapper
-    fmt = Format('blue', wrapper="[%s]", format_with_wrapper=True)
+    fmt = Format(color='blue', wrapper="[%s]", format_with_wrapper=True)
     value = fmt('foo')
     assert value == '\x1b[34m[foo]\x1b[0m'
 
     # Calling with Wrapper
-    fmt = Format('blue')
+    fmt = Format(color='blue')
     value = fmt('bar', wrapper="[%s]")
     assert value == "[\x1b[34mbar\x1b[0m]"
     assert fmt.wrapper is None
 
     # Calling with Wrapper and Format w Wrapper
-    fmt = Format('blue')
+    fmt = Format(color='blue')
     value = fmt('bar', wrapper="[%s]", format_with_wrapper=True)
     assert value == '\x1b[34m[bar]\x1b[0m'
     assert fmt.wrapper is None
@@ -85,7 +84,7 @@ def test_decorates():
     """
 
     # Test Decorates
-    fmt = Format('blue', styles=['bold'])
+    fmt = Format(color='blue', styles=['bold'])
     value = fmt('foo')
 
     # assert value == '\x1b[1;34mfoo\x1b[22;39m'
@@ -99,12 +98,12 @@ def test_decorates():
 def test_with_icon():
 
     # Test Decorates
-    fmt = Format('blue', styles=['bold'], icon="[i]", icon_after=True)
+    fmt = Format(color='blue', styles=['bold'], icon="[i]", icon_after=True)
     value = fmt('foo')
     assert value == '\x1b[1m\x1b[34mfoo [i]\x1b[0m\x1b[0m'
 
     # Format With Icon on Call
-    fmt = Format('blue', styles=['bold'], icon="[i]", icon_before=True)
+    fmt = Format(color='blue', styles=['bold'], icon="[i]", icon_before=True)
     value = fmt('foo', format_with_icon=False)
     assert value == '[i] \x1b[1m\x1b[34mfoo\x1b[0m\x1b[0m'
     assert fmt.format_with_icon is True

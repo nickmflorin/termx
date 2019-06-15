@@ -1,5 +1,4 @@
-from termx import colors
-from termx.formatting import Format
+from termx import colors, Format
 from termx.logging.components.utils import get_value, get_format
 
 

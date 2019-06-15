@@ -1,5 +1,4 @@
-from termx import colors
-from termx.formatting import Format
+from termx import Format, color
 from termx.logging import Lines, Line, Label, Segment
 
 
@@ -10,21 +9,21 @@ def test_label(make_mock_object, make_record, null_record_callable):
 
     label = Label(
         value="Proxy",
-        format=Format(colors.black, colors.bold),
+        format=Format(color='black', styles='bold'),
         delimiter=":",
     )(record)
     assert label == '\x1b[1;30mProxy\x1b[22;39m:'
 
     label = Label(
         attrs="object.value2",
-        format=Format(colors.black, colors.bold),
+        format=Format(color='black', styles='bold'),
         delimiter=":",
     )(record)
     assert label == '\x1b[1;30mbaz\x1b[22;39m:'
 
     label = Label(
         attrs="object.value4",
-        format=Format(colors.black, colors.bold),
+        format=Format(color='black', styles='bold'),
         delimiter=":",
     )(record)
     assert label == ''
@@ -50,7 +49,7 @@ def test_lines(make_mock_object, make_record, null_record_callable):
             return getattr(record.object.exception, 'status_code', None)
 
     def get_message_formatter(record):
-        return Format(colors.black, colors.underline)
+        return Format(color='black', styles='underline')
 
     obj = make_mock_object({
         'exception': {
@@ -69,21 +68,21 @@ def test_lines(make_mock_object, make_record, null_record_callable):
                 value=get_record_message,
                 format=get_message_formatter,
             ),
-            prefix=Format(colors.fg('Grey58'))(">"),
+            prefix=Format(color=color('Grey58'))(">"),
         ),
         Line(
             Segment(
                 value=get_record_status_code,
-                format=Format(colors.fg('Red'), colors.bold)
+                format=Format(color=color('Red'), styles='bold')
             ),
-            prefix=Format(colors.fg('Grey58'))(">"),
+            prefix=Format(color=color('Grey58'))(">"),
         ),
         Line(
             Segment(
                 attrs="other",
-                format=Format(colors.fg('Grey30'), colors.bold),
+                format=Format(color=color('Grey30'), styles='bold'),
             ),
-            prefix=Format(colors.fg('Grey58'))(">"),
+            prefix=Format(color=color('Grey58'))(">"),
         ),
         indent=1,
     )

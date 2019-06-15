@@ -1,5 +1,4 @@
-from termx.formatting import Colors, Format
-from termx.colorlib import style
+from termx import style
 
 
 def test_style():
