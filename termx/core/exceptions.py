@@ -31,6 +31,10 @@ class InvalidStyle(ColorLibError):
         self.__message__ = f"The style {value} is invalid."
 
 
+class SpinnerError(TermxException):
+    pass
+
+
 class LoggingError(TermxException):
     pass
 

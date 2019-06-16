@@ -4,13 +4,16 @@ import sys
 class Cursor:
 
     @classmethod
-    def write(cls, text):
-        sys.stdout.write("%s\n" % text)
+    def write(cls, text, newline=True):
+        if newline:
+            sys.stdout.write("%s\n" % text)
+        else:
+            sys.stdout.write("%s" % text)
 
     @classmethod
-    def overwrite(cls, text):
-        Cursor.clear_line()
-        sys.stdout.write("%s\n" % text)
+    def overwrite(cls, text, newline=True):
+        cls.clear_line()
+        cls.write(text, newline=newline)
 
     @classmethod
     def clear_line(cls):
