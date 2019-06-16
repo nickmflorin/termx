@@ -16,7 +16,7 @@ from termx.core.colorlib import color as Color
 class TerminalOptions:
 
     spin_interval: float = 100
-    write_interval: float = 200
+    write_interval: float = 0
 
     def __post_init__(self):
         self.spin_interval = self.spin_interval * 0.001
@@ -244,7 +244,8 @@ class LineItem:
         separated = (" " * (columns - 5 - measure_ansi_string(date_message) -
             measure_ansi_string(message)))
 
-        return safe_text("%s%s%s" % (message, separated, date_message))
+        char = "\u22EE"
+        return safe_text("%s%s%s%s" % (char, message, separated, date_message))
 
 
 @dataclass
@@ -254,13 +255,15 @@ class HeaderItem:
     text: str
     color: Color
     type: str = 'header'
-    line_index: int = 0
     state: SpinnerStates = SpinnerStates.NOTSET
     indent: int = 0
 
     def _indentation(self, base_indent=0):
         num_spaces = (base_indent + self.indent) * constants.INDENT_COUNT
-        return num_spaces * " "
+        if base_indent == 0:
+            return num_spaces * " "
+        char = "\u22EE"
+        return "%s%s" % (char, (num_spaces * " "))
 
     def format(self, base_indent=0):
         designator = None

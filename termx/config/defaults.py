@@ -306,6 +306,7 @@ def __FORMATS__(data):
 
         CRITICAL = Format(color=Colors.CRITICAL, icon=Icons.CRITICAL, styles=['bold'])
         FAIL = Format(color=Colors.FAIL, icon=Icons.FAIL)
+        ERROR = Format(color=Colors.ERROR, icon=Icons.ERROR)
         SUCCESS = Format(color=Colors.SUCCESS, icon=Icons.SUCCESS)
         WARNING = Format(color=Colors.WARNING, icon=Icons.WARNING)
         INFO = Format(color=Colors.INFO, icon=Icons.INFO)
