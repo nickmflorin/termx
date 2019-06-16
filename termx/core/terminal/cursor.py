@@ -47,9 +47,9 @@ class Cursor:
     @classmethod
     def show(cls):
         sys.stdout.write("\033[?25h")
-        sys.stdout.flush()
+        # sys.stdout.flush()
 
     @classmethod
     def hide(cls):
         sys.stdout.write("\033[?25l")
-        sys.stdout.flush()
+        # sys.stdout.flush()

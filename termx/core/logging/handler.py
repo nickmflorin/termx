@@ -52,19 +52,6 @@ def TermxHandler(handler_cls=logging.StreamHandler, format_string=None, **kwargs
             super(_TermxHandler, self).__init__(**kwargs)
             self.useTermxFormatter(format_string=format_string)
 
-        def prepare_record(self, record):
-            """
-            [x] TODO:
-            --------
-            Remove dependencies on LoggingLevels in terms of the level name and
-            number, and allow the formats specified in the Enum to be configurable
-            by the user of the termx package.
-            """
-            TermxLogHandlerMixin.prepare_record(self, record)
-
-            if not getattr(record, 'level', None):
-                setattr(record, 'level', config.LoggingLevels[record.levelname])
-
         def emit(self, record):
             self.prepare_record(record)
             super(_TermxHandler, self).emit(record)

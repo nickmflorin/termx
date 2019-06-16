@@ -12,6 +12,17 @@ from termx.ext.utils import measure_ansi_string, shaded_level
 from termx.core.colorlib import color as Color
 
 
+@dataclass
+class TerminalOptions:
+
+    spin_interval: float = 100
+    write_interval: float = 200
+
+    def __post_init__(self):
+        self.spin_interval = self.spin_interval * 0.001
+        self.write_interval = self.write_interval * 0.001
+
+
 class SpinnerStates(Enum):
     """
     [x] TODO:
@@ -59,7 +70,6 @@ class LineItem:
     type: str = 'line'
     state: SpinnerStates = SpinnerStates.NOTSET
     indent: int = 0
-    priority: int = 0  # "Higher" Than Header Items
 
     options: InitVar[LineItemOptions] = None
     _options: LineItemOptions = field(init=False)
@@ -227,7 +237,7 @@ class LineItem:
             return safe_text(message)
 
         # TODO: Make DATE_FORMAT Configurable, Make FADED Format Configurable
-        date_message = config.Formats.Text.FADED.with_wrapper("[%s]")(
+        date_message = config.Formats.TEXT.FADED.with_wrapper("[%s]")(
             datetime.now().strftime(constants.DATE_FORMAT)
         )
         columns, _ = shutil.get_terminal_size(fallback=(80, 24))
@@ -247,7 +257,6 @@ class HeaderItem:
     line_index: int = 0
     state: SpinnerStates = SpinnerStates.NOTSET
     indent: int = 0
-    priority: int = 1  # "Lower" Than Line Items
 
     def _indentation(self, base_indent=0):
         num_spaces = (base_indent + self.indent) * constants.INDENT_COUNT
