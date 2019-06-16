@@ -6,7 +6,7 @@ import threading
 import time
 from queue import PriorityQueue
 
-from termx.config import config
+from termx import config
 from termx.ext.compat import safe_text, PY2, ENCODING
 
 from termx.core.terminal import Cursor

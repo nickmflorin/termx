@@ -1,7 +1,6 @@
 import pytest
 
-from termx import SpinnerStates
-from termx.core.spinner.models import LineItem
+from termx.core.spinner.models import LineItem, SpinnerStates
 
 
 @pytest.fixture

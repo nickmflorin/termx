@@ -1,4 +1,5 @@
-from termx import Colors, Format, SpinnerStates
+from termx import Colors, Format
+from termx.core.spinner.models import SpinnerStates
 
 
 def test_line_item(make_line_item):
@@ -19,17 +20,18 @@ def test_line_item(make_line_item):
             item = make_line_item(indent=0, state=SpinnerStates.WARNING, options={
                 'label': True,
                 'show_icon': False,
-                'show_datetime': False
+                'show_datetime': False,
+                'color_label': True,
             })
 
             # Even though indent = 0, line items start off indented by 2 spaces underneath
             # the header lines.
-            bullet_fmt = Format(Colors.SHADES[3])
+            bullet_fmt = Format(color=Colors.SHADES[3])
             bullet = bullet_fmt(">")
-            text_fmt = Format(Colors.SHADES[1])
+            text_fmt = Format(color=Colors.SHADES[1])
             text = text_fmt("Test Line")
 
-            label = SpinnerStates.WARNING.fmt.without_icon()(SpinnerStates.WARNING.label)
+            label = SpinnerStates.WARNING.fmt.apply_color(SpinnerStates.WARNING.label)
 
             expected = f"  {bullet} {label}: {text}"
             formatted = item.format()
@@ -40,7 +42,8 @@ def test_line_item(make_line_item):
             item = make_line_item(indent=1, state=SpinnerStates.WARNING, options={
                 'label': True,
                 'show_icon': True,
-                'show_datetime': False
+                'show_datetime': False,
+                'color_label': True,
             })
             formatted = item.format()
 
@@ -48,13 +51,14 @@ def test_line_item(make_line_item):
             # the header lines.
             bullet_fmt = SpinnerStates.WARNING.fmt.apply_color
             bullet = bullet_fmt("✘")
-            text_fmt = Format(Colors.SHADES[2])
+            text_fmt = Format(color=Colors.SHADES[2])
             text = text_fmt("Test Line")
 
-            label = SpinnerStates.WARNING.fmt.without_icon()(SpinnerStates.WARNING.label)
+            label = SpinnerStates.WARNING.fmt.apply_color(SpinnerStates.WARNING.label)
 
             expected = f"    {bullet} {label}: {text}"
             formatted = item.format()
+
             assert formatted == expected
 
         def with_icon_color():
@@ -63,22 +67,24 @@ def test_line_item(make_line_item):
                 'label': True,
                 'show_icon': True,
                 'color_icon': False,
-                'show_datetime': False
+                'show_datetime': False,
+                'color_label': True,
             })
 
             formatted = item.format()
 
             # Even though indent = 0, line items start off indented by 2 spaces underneath
             # the header lines.
-            bullet_fmt = Format(Colors.SHADES[4])
+            bullet_fmt = Format(color=Colors.SHADES[5])
             bullet = bullet_fmt("✘")
-            text_fmt = Format(Colors.SHADES[2])
+            text_fmt = Format(color=Colors.SHADES[2])
             text = text_fmt("Test Line")
 
-            label = SpinnerStates.WARNING.fmt.without_icon()(SpinnerStates.WARNING.label)
+            label = SpinnerStates.WARNING.fmt.apply_color(SpinnerStates.WARNING.label)
 
             expected = f"    {bullet} {label}: {text}"
             formatted = item.format()
+
             assert formatted == expected
 
         with_label_color()

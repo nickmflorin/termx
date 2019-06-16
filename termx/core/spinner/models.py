@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field, InitVar
 from datetime import datetime
+from enum import Enum
 import shutil
 import typing
 
@@ -9,6 +10,27 @@ from termx.ext.compat import safe_text
 from termx.ext.utils import measure_ansi_string, shaded_level
 
 from termx.core.colorlib import color as Color
+
+
+class SpinnerStates(Enum):
+    """
+    [x] TODO:
+    --------
+    We might want to make the default spinner state labels configurable.
+    """
+    NOTSET = ("Not Set", config.Formats.NOTSET, 0)
+    OK = ("Ok", config.Formats.SUCCESS, 1)
+    WARNING = ("Warning", config.Formats.WARNING, 2)
+    FAIL = ("Failed", config.Formats.FAIL, 3)
+
+    def __init__(self, label, fmt, level):
+        self.label = label
+        self.fmt = fmt
+        self.level = level
+
+    @property
+    def icon(self):
+        return self.fmt.icon
 
 
 @dataclass
@@ -35,7 +57,7 @@ class LineItem:
 
     text: str
     type: str = 'line'
-    state: config.SpinnerStates = config.SpinnerStates.NOTSET
+    state: SpinnerStates = SpinnerStates.NOTSET
     indent: int = 0
     priority: int = 0  # "Higher" Than Header Items
 
@@ -81,7 +103,7 @@ class LineItem:
     @property
     def _label(self):
         if self._options.label:
-            if type(self._options.label) is bool and self.state != config.SpinnerStates.NOTSET:
+            if type(self._options.label) is bool and self.state != SpinnerStates.NOTSET:
                 return self.state.label
             elif type(self._options.label) is str:
                 return self._options.label
@@ -103,7 +125,7 @@ class LineItem:
                     color = Color(self._options.color_label)
                     return color(self._label)
 
-                if self.state != config.SpinnerStates.NOTSET:
+                if self.state != SpinnerStates.NOTSET:
                     return self.state.fmt.apply_color(self._label)
 
             return self._label_shade(self._label)
@@ -133,7 +155,7 @@ class LineItem:
         """
         state_fmt = self.state.fmt.apply_color
 
-        if self._options.show_icon and self.state != config.SpinnerStates.NOTSET:
+        if self._options.show_icon and self.state != SpinnerStates.NOTSET:
 
             if self._options.color_icon:
                 if type(self._options.color_icon) is str:
@@ -146,7 +168,7 @@ class LineItem:
 
         elif self._options.bullet:
             # We Do Not Color Bullet for NOTSET Cases
-            if self._options.color_bullet and self.state != config.SpinnerStates.NOTSET:
+            if self._options.color_bullet and self.state != SpinnerStates.NOTSET:
                 if type(self._options.color_bullet) is str:
                     color = Color(self._options.color_bullet)
                     return color(self._options.bullet)
@@ -223,7 +245,7 @@ class HeaderItem:
     color: Color
     type: str = 'header'
     line_index: int = 0
-    state: config.SpinnerStates = config.SpinnerStates.NOTSET
+    state: SpinnerStates = SpinnerStates.NOTSET
     indent: int = 0
     priority: int = 1  # "Lower" Than Line Items
 
@@ -233,7 +255,7 @@ class HeaderItem:
 
     def format(self, base_indent=0):
         designator = None
-        if self.state == config.SpinnerStates.NOTSET:
+        if self.state == SpinnerStates.NOTSET:
             designator = self.color(self.frame)
         else:
             # We could format the text with the icon and not have to do it in

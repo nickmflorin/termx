@@ -2,6 +2,7 @@ import contextlib
 from dataclasses import dataclass, field, InitVar, fields
 import typing
 
+from termx.ext.compat import safe_text
 from termx.ext.utils import ensure_iterable
 from termx.core.colorlib import color as Color, style as Style
 from termx.core.exceptions import FormatError
@@ -49,7 +50,7 @@ class IconFormat:
     icon_after: InitVar[bool] = field(default=None)
     format_with_icon: bool = field(default=True)
 
-    def _apply_icon(self, text):
+    def apply_icon(self, text):
         if self.icon:
             if self.icon_location == 'before':
                 return "%s %s" % (self.icon, text)
@@ -85,14 +86,15 @@ class WrapperFormat:
     wrapper: str = None
     format_with_wrapper: bool = False
 
-    def _apply_wrapper(self, text):
+    def apply_wrapper(self, text):
         """
         [x] TODO:
         ---------
         Investigate and implement other string formatting methods for specifying
         a wrapper that can be used to format the format object.
         """
-        return self.wrapper % text
+        if self.wrapper:
+            return self.wrapper % text
 
     def add_wrapper(self, wrapper, format_with_wrapper=None):
         self.wrapper = wrapper
@@ -200,20 +202,23 @@ class Format(FormatDataClass, IconFormat, WrapperFormat):
         For styles, we need to join/update the list of styles by adding the
         missing styles to the array.
         """
-        text = "%s" % text
+        if text is None:
+            raise FormatError('Cannot format null text.')
+
+        text = safe_text(text)
 
         with self._temporary_override(**overrides):
             # Apply icon and wrapper before and/or after formatting depending
             # on values of `format_with_wrapper` and `format_with_icon`.
-            wrapper_bounds = self.format_bounds(self.wrapper, self.format_with_wrapper, self._apply_wrapper)
-            icon_bounds = self.format_bounds(self.icon, self.format_with_icon, self._apply_icon)
+            wrapper_bounds = self.format_bounds(self.wrapper, self.format_with_wrapper, self.apply_wrapper)
+            icon_bounds = self.format_bounds(self.icon, self.format_with_icon, self.apply_icon)
             text = icon_bounds(wrapper_bounds(self._format))(text)
 
         return text
 
     def _format(self, text):
-        text = self._color(text)
-        return self._style(text)
+        text = self.apply_color(text)
+        return self.apply_style(text)
 
     def apply_color(self, text):
         if self._color:
