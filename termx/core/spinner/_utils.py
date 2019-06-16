@@ -29,3 +29,33 @@ def get_frames(spinner):
 
     else:
         raise ValueError("{0!r}: No Frames Found for Spinner".format(spinner))
+
+
+def shaded_level(level, bold=False, dark_limit=0, light_limit=None, gradient=1):
+    """
+    [x] TODO:
+    --------
+    It is not a good idea right now to use the `gradient` parameter, because the
+    discretized shades are not extensive enough to cover a wide range of shades
+    when we use that parameter.
+
+    We should come up with an interpolation method that shades between black
+    and white depending on a gradient and a certain percentage.
+    """
+    from termx.config import config
+    from termx.core.exceptions import FormatError
+
+    light_limit = light_limit or 1
+    dark_limit = dark_limit or 0
+    slc = slice(dark_limit, -1 * light_limit, gradient)
+    shades = config.Colors.SHADES[slc]
+
+    if len(shades) == 0:
+        raise FormatError('Invalid shade limits.')
+
+    # fmt = Format(color=shades[level], styles=styles)
+    # import ipdb; ipdb.set_trace()
+    try:
+        return shades[level]
+    except IndexError:
+        return shades[-1]

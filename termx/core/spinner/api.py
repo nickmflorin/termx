@@ -194,7 +194,12 @@ class SpinnerGroup(AbstractGroup):
         Only Updates Header on State Change Associated w/ Line
         """
         state = state or SpinnerStates.NOTSET
-        line = LineItem(text=text, state=state, options=options)
+        line = LineItem(
+            text=text,
+            state=state,
+            depth=self._depth,
+            options=options,
+        )
         self._line_out(line)
 
     """
@@ -208,17 +213,37 @@ class SpinnerGroup(AbstractGroup):
     should we allow that to just update the header?
     """
 
-    def error(self, text=None, propogate=True):
-        self.fail(text=text, propogate=propogate)
+    def error(self, text=None, fatal=True):
+        self.fail(text=text, fatal=fatal)
 
-    def fail(self, text=None, options=None, propogate=True):
+    def okay(self, text, options=None):
+        """
+        Writing a line as "okay" is always non-fatal, since the only way to
+        make the top level header item have a state okay is if all tasks complete
+        without an error or warning (that is fatal).
+
+        This effectively just puts a checkmark next to the item.
+        """
+        options = options or {}
+        options.update(color_icon=False)
+        self.write(text, state=SpinnerStates.OK, options=options)
+
+    def fail(self, text=None, options=None, fatal=True):
+        options = options or {}
         if text:
+            if not fatal:
+                options.update(color_icon=False)
             self.write(text, state=SpinnerStates.FAIL, options=options)
-        self._change_state(state=SpinnerStates.FAIL)
+        if fatal:
+            self._change_state(state=SpinnerStates.FAIL)
 
-    def warning(self, text=None, options=None):
+    def warning(self, text=None, options=None, fatal=True):
         # if not self._parenting:
         #     raise SpinnerError('Cannot write with a spinner descendant that is not active.')
+        options = options or {}
         if text:
+            if not fatal:
+                options.update(color_icon=False)
             self.write(text, state=SpinnerStates.WARNING, options=options)
-        self._change_state(state=SpinnerStates.WARNING)
+        if fatal:
+            self._change_state(state=SpinnerStates.WARNING)

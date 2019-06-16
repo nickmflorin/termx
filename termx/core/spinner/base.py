@@ -207,6 +207,7 @@ class AbstractGroup(AbstractSpinner):
                 state=self._state,
                 frame=self._frame,
                 color=self._color,
+                depth=self._depth,
             )
             self._head_out(header)
         return (state_changed, text_changed, frame_changed)
@@ -257,7 +258,7 @@ class AbstractGroup(AbstractSpinner):
         return False
 
     def _line_out(self, line):
-        message = line.format(base_indent=self._depth)
+        message = line.format()
         time.sleep(self.options.write_interval)
         with self._write_lock:
             self._print(message)
@@ -271,6 +272,6 @@ class AbstractGroup(AbstractSpinner):
         --------
         Wait until last frame to display state of last line.
         """
-        output = item.format(base_indent=self._depth)
+        output = item.format()
         with self._write_lock:
             self._print_head(output)
