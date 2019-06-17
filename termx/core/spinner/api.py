@@ -99,6 +99,18 @@ class Spinner(AbstractSpinner):
 
     @contextlib.contextmanager
     def child(self, text, separate=True):
+        """
+        [x] NOTE:
+        --------
+        In general, things do not seem to work as well for cases when we chain
+        the context managers:
+
+        >>> with self._child(text) as group:
+        >>>     self._children.append(group)
+        >>>     yield group
+
+        Not sure why, but it does mess with things a tiny bit.
+        """
         if separate:
             Cursor.newline()
 
@@ -157,10 +169,18 @@ class SpinnerGroup(AbstractGroup):
         --------
         Figure out how to keep nested animation going, where we do not want
         to kill the top level thread while the children are running.
-        """
-        # self.stop()
-        # self._move_to_newline()
 
+        [x] NOTE:
+        --------
+        In general, things do not seem to work as well for cases when we chain
+        the context managers:
+
+        >>> with self._child(text) as group:
+        >>>     self._children.append(group)
+        >>>     yield group
+
+        Not sure why, but it does mess with things a tiny bit.
+        """
         self.done()
 
         child = self._child(text)
@@ -171,12 +191,6 @@ class SpinnerGroup(AbstractGroup):
             yield child
         finally:
             child.done()
-
-        # Some Kind of Hold Method - Keep Nested Animation Going
-        # self.hold()
-        # with self._child(text) as group:
-        #     self._children.append(group)
-        #     yield group
 
     def hold(self):
         self._move_to_newline()
