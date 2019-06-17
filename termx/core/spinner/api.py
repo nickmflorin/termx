@@ -227,7 +227,7 @@ class SpinnerGroup(AbstractGroup):
         self._stop_spin.set()
         self._spin_thread.join()
 
-    def write(self, text, state=None, options=None):
+    def write(self, text, state=None, options=None, fatal=True):
         """
         Write a message underneath the last written message waithout changing
         the top level text or spinner.
@@ -240,6 +240,7 @@ class SpinnerGroup(AbstractGroup):
             state=state,
             depth=self._depth,
             options=options,
+            fatal=fatal,
         )
         self._line_out(line)
 
@@ -267,14 +268,13 @@ class SpinnerGroup(AbstractGroup):
         """
         options = options or {}
         options.update(color_icon=False)
-        self.write(text, state=SpinnerStates.OK, options=options)
+        # Not Really Fatal - But just means don't color icon and use bullet too.
+        self.write(text, state=SpinnerStates.OK, options=options, fatal=False)
 
     def fail(self, text=None, options=None, fatal=True):
         options = options or {}
         if text:
-            if not fatal:
-                options.update(color_icon=False)
-            self.write(text, state=SpinnerStates.FAIL, options=options)
+            self.write(text, state=SpinnerStates.FAIL, options=options, fatal=fatal)
         if fatal:
             self._change_state(state=SpinnerStates.FAIL)
 
@@ -283,8 +283,6 @@ class SpinnerGroup(AbstractGroup):
         #     raise SpinnerError('Cannot write with a spinner descendant that is not active.')
         options = options or {}
         if text:
-            if not fatal:
-                options.update(color_icon=False)
-            self.write(text, state=SpinnerStates.WARNING, options=options)
+            self.write(text, state=SpinnerStates.WARNING, options=options, fatal=fatal)
         if fatal:
             self._change_state(state=SpinnerStates.WARNING)

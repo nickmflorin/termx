@@ -77,13 +77,13 @@ class LineItemStyle:
         return fmt(bullet)
 
     def shade_icon(self, icon):
-        fmt = shaded_level(self.depth, dark_limit=1)
+        fmt = shaded_level(self.depth, dark_limit=2)
         return fmt(icon)
 
     @property
     def _icon(self):
         if self.show_icon and self.state != SpinnerStates.NOTSET:
-            if self.color_icon:
+            if self.color_icon and self.fatal:
                 if type(self.color_icon) is str:
                     return Color(self.color_icon)(self.state.icon)
                 elif isinstance(self.color_icon, Color):
@@ -150,16 +150,6 @@ class LineItemStyle:
             return color_label(label)
 
     @property
-    def _pointer(self):
-        """
-        Determines the bullet to apply to a given non header line based on
-        the state of that written line.
-        """
-        if self._icon:
-            return self._icon
-        return self._bullet
-
-    @property
     def _text(self):
         text = self.shade_text(self.text)
         if self._label:
@@ -189,7 +179,15 @@ class LineItemStyle:
         text = self.shade_text(text)
         if self._label:
             text = "%s: %s" % (self._label, text)
-        return "%s %s" % (self._pointer, text)
+
+        if not self.fatal:
+            if self._icon:
+                return "%s %s %s" % (self._bullet, self._icon, text)
+            return "%s %s" % (self._bullet, text)
+        else:
+            if self._icon:
+                return "%s %s" % (self._icon, text)
+            return "%s %s" % (self._bullet, text)
 
 
 @dataclass
