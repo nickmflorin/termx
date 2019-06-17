@@ -94,6 +94,9 @@ class AbstractGroup(AbstractSpinner):
         self._write_lock = lock or threading.Lock()
 
         self._done = False
+        self._done = False
+        self._stopped = False
+
         self._spin_thread = None
 
         self.lines = 0

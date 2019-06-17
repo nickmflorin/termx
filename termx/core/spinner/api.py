@@ -190,9 +190,11 @@ class SpinnerGroup(AbstractGroup):
         Have to incorporate nested blocks as well
         Allow control from main spinner container..
         """
-        self._stop_spin.set()
-        self._spin_thread.join()
-        self._move_to_newline()
+        if not self._stopped:
+            self._stopped = True
+            self._stop_spin.set()
+            self._spin_thread.join()
+            self._move_to_newline()
 
     def write(self, text, state=None, options=None):
         """
