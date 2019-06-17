@@ -102,9 +102,14 @@ class Spinner(AbstractSpinner):
         if separate:
             Cursor.newline()
 
-        with self._child(text) as group:
-            self._children.append(group)
-            yield group
+        child = self._child(text)
+        self._children.append(child)
+
+        try:
+            child.start()
+            yield child
+        finally:
+            child.done()
 
     def __repr__(self):
         repr_ = u"<Spinner frames={0!s}>".format(self._frames)
@@ -153,13 +158,25 @@ class SpinnerGroup(AbstractGroup):
         Figure out how to keep nested animation going, where we do not want
         to kill the top level thread while the children are running.
         """
+        # self.stop()
+        # self._move_to_newline()
+
         self.done()
+
+        child = self._child(text)
+        self._children.append(child)
+
+        try:
+            child.start()
+            yield child
+        finally:
+            child.done()
 
         # Some Kind of Hold Method - Keep Nested Animation Going
         # self.hold()
-        with self._child(text) as group:
-            self._children.append(group)
-            yield group
+        # with self._child(text) as group:
+        #     self._children.append(group)
+        #     yield group
 
     def hold(self):
         self._move_to_newline()
@@ -180,8 +197,9 @@ class SpinnerGroup(AbstractGroup):
         """
         if not self._done:
             self._done = True
-            self._change(state=SpinnerStates.OK, text=text)
             self.stop()
+            self._change(state=SpinnerStates.OK, text=text)
+            self._move_to_newline()
 
     def stop(self):
         """
@@ -190,11 +208,10 @@ class SpinnerGroup(AbstractGroup):
         Have to incorporate nested blocks as well
         Allow control from main spinner container..
         """
-        if not self._stopped:
-            self._stopped = True
-            self._stop_spin.set()
-            self._spin_thread.join()
-            self._move_to_newline()
+        # if not self._stopped:
+        # self._stopped = True
+        self._stop_spin.set()
+        self._spin_thread.join()
 
     def write(self, text, state=None, options=None):
         """
