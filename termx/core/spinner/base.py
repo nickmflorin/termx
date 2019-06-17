@@ -14,6 +14,7 @@ class AbstractSpinner(object):
     def __init__(self, color, spinner, options):
 
         self.options = options
+        self._quit = False
 
         self._color = color
         self._spinner = spinner
@@ -59,16 +60,6 @@ class AbstractSpinner(object):
             older_siblings=self._children,
             parent=self,
         )
-
-    def _run_group(self, group):
-        group.start()
-        try:
-            yield group
-        except Exception as e:
-            group.error(str(e))
-            raise e
-        finally:
-            group.done()
 
 
 class AbstractGroup(AbstractSpinner):

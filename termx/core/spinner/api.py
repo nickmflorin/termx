@@ -6,7 +6,6 @@ import threading
 from termx.ext.compat import ENCODING, PY2
 from termx.core.terminal import Cursor
 from termx.core.colorlib import color as Color
-from termx.core.exceptions import SpinnerError
 
 from .models import TerminalOptions, SpinnerStates, LineItem
 from .base import AbstractSpinner, AbstractGroup
@@ -103,9 +102,9 @@ class Spinner(AbstractSpinner):
         if separate:
             Cursor.newline()
 
-        group = self._child(text)
-        self._children.append(group)
-        return self._run_group(group)
+        with self._child(text) as group:
+            self._children.append(group)
+            yield group
 
     def __repr__(self):
         repr_ = u"<Spinner frames={0!s}>".format(self._frames)
@@ -117,12 +116,22 @@ class Spinner(AbstractSpinner):
 class SpinnerGroup(AbstractGroup):
 
     def __enter__(self):
+        if self._parent and self._parent._quit:
+            return None
         self.start()
         return self
 
     def __exit__(self, exc_type, exc_val, traceback):
         # Avoid stop() execution for the 2nd time
-        if self._spin_thread.is_alive() or self._consumer.is_alive():
+        if exc_type:
+            self._stop_spin.set()
+            self._spin_thread.join()
+            self._quit = True
+            self.error(exc_val)
+            self._move_to_newline()
+            return 0
+
+        if self._spin_thread.is_alive():
             self.stop()
         return False  # Nothing is Handled
 
@@ -148,10 +157,9 @@ class SpinnerGroup(AbstractGroup):
 
         # Some Kind of Hold Method - Keep Nested Animation Going
         # self.hold()
-
-        group = self._child(text)
-        self._children.append(group)
-        return self._run_group(group)
+        with self._child(text) as group:
+            self._children.append(group)
+            yield group
 
     def hold(self):
         self._move_to_newline()
