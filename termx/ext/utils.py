@@ -16,8 +16,11 @@ package and by potential users of the package.
 Utilities that are private to the package should be placed in framework.py.
 """
 
-import re
+import asyncio
 import collections
+from functools import wraps
+import re
+import sys
 
 
 def string_format_tuple(value):
@@ -104,3 +107,51 @@ def ensure_iterable(value, coercion=tuple, force_coerce=False):
         if type(value) not in [str, bytes, int, float, bool]:
             raise ValueError('Cannot guarantee coercion of type %s.' % value)
         return coercion([value])
+
+
+def break_before(fn):
+    """
+    [x] TODO:
+    --------
+    Add compatibility checks for Python3 and asyncio module.
+    """
+    if asyncio.iscoroutinefunction(fn):
+
+        @wraps(fn)
+        async def wrapper(*args, **kwargs):
+            sys.stdout.write("\n")
+            return await fn(*args, **kwargs)
+        return wrapper
+
+    else:
+
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            sys.stdout.write("\n")
+            return fn(*args, **kwargs)
+        return wrapper
+
+
+def break_after(fn):
+    """
+    [x] TODO:
+    --------
+    Add compatibility checks for Python3 and asyncio module.
+    """
+    if asyncio.iscoroutinefunction(fn):
+
+        @wraps(fn)
+        async def wrapper(*args, **kwargs):
+            results = await fn(*args, **kwargs)
+            sys.stdout.write("\n")
+            return results
+        return wrapper
+
+    else:
+
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            results = fn(*args, **kwargs)
+            sys.stdout.write("\n")
+            return results
+        return wrapper
