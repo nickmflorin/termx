@@ -94,9 +94,8 @@ class Spinner(AbstractSpinner):
             Cursor.newline()
 
         youngest = self._find_youngest_descendant()
-        with Cursor.silence_stdout():
-            with youngest._parent.child(text) as desc:
-                yield desc
+        with youngest._parent.child(text) as desc:
+            yield desc
 
     @contextlib.contextmanager
     def child(self, text, separate=True):
@@ -118,12 +117,10 @@ class Spinner(AbstractSpinner):
         child = self._child(text)
         self._children.append(child)
 
-        # Top Level Context of All Children:  This is where we want to silence
-        # the stdout, so that we can collect all messages that would have been
-        # outputted throughout the tree.
         # [x] NOTE: This does not work perfectly if we reenter the cursor, but
-        # at least does not mess up the spinner.
-        with Cursor.silence_stdout():
+        # at least does not mess up the spinner.  That is why we use strict
+        # mode to raise exceptions if you try to print.
+        with Cursor.silence_stdout(swallow=True):
             try:
                 child.start()
                 yield child
@@ -228,11 +225,12 @@ class SpinnerGroup(AbstractGroup):
         --------
         Have to incorporate nested blocks as well
         Allow control from main spinner container..
+
+        Spin thread can be null if an error occurs before it is initialized fully.
         """
-        # if not self._stopped:
-        # self._stopped = True
         self._stop_spin.set()
-        self._spin_thread.join()
+        if self._spin_thread:
+            self._spin_thread.join()
 
     def write(self, text, state=None, options=None, fatal=True):
         """

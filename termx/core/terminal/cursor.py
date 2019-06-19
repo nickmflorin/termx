@@ -20,7 +20,7 @@ class Cursor:
 
     @classmethod
     @contextlib.contextmanager
-    def silence_stdout(cls):
+    def silence_stdout(cls, strict=False, swallow=False):
 
         silenced_messages = []
         original_stdout = sys.stdout.write
@@ -29,15 +29,22 @@ class Cursor:
             with cls.stdout_replacement(original_stdout) as write:
                 write(text)
 
+        def uncontrolled_std(text):
+            if not swallow:
+                if strict:
+                    raise RuntimeError('Cannot write to sys.stdout when spinner is running.')
+                silenced_messages.append(text)
+
         try:
-            sys.stdout.write = lambda x: silenced_messages.append(x)
+            sys.stdout.write = uncontrolled_std
             cls.output = controlled_std
             yield cls
         finally:
             sys.stdout.write = original_stdout
             cls.output = sys.stdout.write
 
-            if len(silenced_messages) != 0:
+            # Warning: This causes issues on spinner reentry.
+            if len(silenced_messages) != 0 and not swallow and not strict:
                 logging.warning('Trying to use `sys.stdout.write` when it is disabled.')
                 for message in silenced_messages:
                     cls.write_line(message)
