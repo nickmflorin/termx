@@ -7,7 +7,6 @@ def test_format_with_color():
 
     def initialize_with_string():
         fmt = Format(color='blue')
-        import ipdb; ipdb.set_trace()
         value = fmt.color('foo')
         import ipdb; ipdb.set_trace()
         assert value == '\x1b[34mfoo\x1b[0m'

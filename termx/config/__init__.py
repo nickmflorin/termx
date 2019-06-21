@@ -1,57 +1,60 @@
 from termx.library import get_version
+from simple_settings import settings
 
 from .doc import Colors, Icons, Formats, Text, ConfigDoc
-from .utils import read_default_config, ConfigMapping
 
 """
-[x] TODO:
---------
-Currently, other modules importing the configurable constants for colors,
-formats, etc. would have to do it like:
+[!] IMPORTANT
+------------
 
->>> from termx.configig import config
->>> config.Colors.BLUE
+If we want to make changse to any of ['ICONS', 'COLORS', 'TEXT', 'FORMATS'],
+where the changes is objectified (i.e. changing a color with a string will
+store an instance of ``color``) and where changes do not remove other values
+in the dict, we have to use
 
-This is not what we want, we want to be able to import Colors, Formats, etc.
-directly.
+>>> config({...})
 
-[x] TODO:
---------
-Once we move the configuration of colors and formats to the top level module,
-this configuration style module is probably not needed anymore, so we can
-deprecate.
+There is no hook into simple_settings to force the _Config to regeneratee and
+update the simple_settings ``settings``.  Updating singular simple values
+with the simple_settings module is fine:
+
+>>> from simple_settings import settings
+>>> settings.configure({'SIMPLE': 1})
+
+Or reading from the simple_settings module.  But, the following will not work:
+
+>>> from simple_settings import settings
+>>> settings.COLORS.GREEN('Test Message')
+>>> Test Message (Shaded Green)  # _Config() Initialized on Termx Init
+
+>>> settings.configure({'COLORS': {'GREEN': '#EFEFEF'}})
+>>> settings.COLORS.GREEN('Test Message')
+>>> AttributeError
 """
 
 
-class _Config(ConfigMapping):
+class _Config(object):
 
     CUSTOM_DOCS = ['ICONS', 'COLORS', 'TEXT', 'FORMATS']
 
+    def __init__(self):
+        pass
+
     @classmethod
-    def read(cls):
+    def initialize_settings(cls):
 
-        doc = read_default_config()
-        icons = Icons(doc)
-        colors = Colors(doc)
+        data = settings.as_dict()
+        doc = ConfigDoc(data)
 
-        doc.update({
-            'COLORS': colors,
-            'ICONS': icons,
-            'TEXT': Text(doc, colors=colors, icons=icons),
-            'FORMATS': Formats(doc, colors=colors, icons=icons)
-        })
-        return cls(doc)
+        settings.configure(
+            COLORS=Colors(doc),
+            ICONS=Icons(doc),
+            TEXT=Text(doc),
+            FORMATS=Formats(doc)
+        )
 
-    def update(self, doc):
-        """
-        Only sets the value to the new value if present in the data, otherwise
-        maintains the original value.
-        """
-        for key, val in doc.items():
-            if val is not None:
-                self[key] = val
-
-    def __call__(self, data):
+    @classmethod
+    def configure(cls, overrides):
         """
         [x] TODO:
         --------
@@ -59,20 +62,37 @@ class _Config(ConfigMapping):
         the Cerberus package and define the schema.  This will also work for
         the styling attributes as well.
         """
+
+        data = settings.as_dict()
         doc = ConfigDoc(data)
 
-        for doc_string in self.CUSTOM_DOCS:
+        raise Exception()
+
+        # TODO: Come up with an override method that will not alter entire
+        # dict structures but only non-destructive changes.
+        # >>> doc.update(**overrides)
+        # >>> settings.configure(**doc)
+
+        for doc_string in cls.CUSTOM_DOCS:
             if doc_string in doc:
-                self[doc_string].override(doc)
+
+                subdoc = getattr(settings, doc_string)
+                subdoc.override(doc)
+                settings.configure(**{doc_string: subdoc})
+
+                # If we do not do this, the invalid version will be updated
+                # in the next block.
                 del doc[doc_string]
 
         # Update the Rest of the Elements
-        self.update(doc)
+        settings.configure(**doc)
 
-    def version(self):
+    @classmethod
+    def version(cls):
         from termx import __VERSION__
         return get_version(__VERSION__)
 
 
 # Read the Defaults on Module Load
-config = _Config.read()
+config = _Config()
+config.initialize_settings()

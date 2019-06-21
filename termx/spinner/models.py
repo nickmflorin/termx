@@ -4,7 +4,7 @@ from enum import Enum
 import shutil
 import typing
 
-from termx.config import config
+from simple_settings import settings
 
 from termx.ext.compat import safe_text
 from termx.ext.utils import measure_ansi_string
@@ -30,10 +30,10 @@ class SpinnerStates(Enum):
     --------
     We might want to make the default spinner state labels configurable.
     """
-    NOTSET = ("Not Set", config.Colors.NOTSET, config.Icons.NOTSET, 0)
-    OK = ("Ok", config.Colors.SUCCESS, config.Icons.SUCCESS, 1)
-    WARNING = ("Warning", config.Colors.WARNING, config.Icons.WARNING, 2)
-    FAIL = ("Failed", config.Colors.FAIL, config.Icons.FAIL, 3)
+    NOTSET = ("Not Set", settings.COLORS.NOTSET, settings.ICONS.NOTSET, 0)
+    OK = ("Ok", settings.COLORS.SUCCESS, settings.ICONS.SUCCESS, 1)
+    WARNING = ("Warning", settings.COLORS.WARNING, settings.ICONS.WARNING, 2)
+    FAIL = ("Failed", settings.COLORS.FAIL, settings.ICONS.FAIL, 3)
 
     def __init__(self, label, color, icon, level):
         self.label = label

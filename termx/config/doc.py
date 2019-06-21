@@ -1,79 +1,16 @@
-import logging
-import warnings
+import copy
 
-from termx.exceptions import (
-    ConfigError, InconfigurableError, MissingConfigurationError,
-    MissingSectionError, DisallowedFieldError, ConfigValueError)
+from termx.exceptions import (ConfigError, MissingConfigurationError,
+    MissingSectionError, ConfigValueError)
 
-from .constants import STRICT_CONFIG
-from .utils import ConfigMapping
-
-
-logger = logging.getLogger('Configuration')
-
-
-class ConfigDoc(ConfigMapping):
-    """
-    Dict subclass specifically for configuration that adds flexibility to how
-    items are retrieved and stores keys and values by uppercase transformations.
-    """
-
-    def __setitem__(self, key, value):
-        self.store[self.__keytransform__(key)] = self.__valtransform__(value)
-
-    @classmethod
-    def _handle_config_error(cls, e):
-        if STRICT_CONFIG:
-            raise e
-        warnings.warn(str(e))
-        logger.warn(str(e))
-
-    def _raise_if_disallowed(self, attr, val):
-        allowable_fields = self._meta('ALLOWED')
-        if len(allowable_fields) != 0:
-            for key, _ in val.items():
-                if key not in [fld.upper() for fld in allowable_fields]:
-                    raise DisallowedFieldError(key)
-
-    def _raise_if_nonconfigurable(self, attr, val):
-        non_configurable = self._meta('NOT_CONFIGURABLE')
-        if attr in non_configurable:
-            raise InconfigurableError(attr)
-
-    def _validate_for_configure(self, attr, val):
-        self._raise_if_disallowed(attr, val)
-
-    def _validate_for_override(self, attr, val):
-        self._raise_if_disallowed(attr, val)
-        self._raise_if_nonconfigurable(attr, val)
-
-    def __valtransform__(self, value):
-        if isinstance(value, dict):
-            warnings.warn('Should not be seeing raw dict objects in ConfigDoc.')
-            return ConfigDoc(value)
-        elif isinstance(value, ConfigDoc):
-            return value
-        else:
-            if isinstance(value, str):
-                return value.upper()
-            elif isinstance(value, int):
-                return value
-            elif isinstance(value, list):
-                return [
-                    self.__valtransform__(v)
-                    for v in value
-                ]
-            elif (hasattr(value, '__class__') and value.__class__.__name__ in
-                    ('color', 'style', 'highlight', 'Format')):
-                return value
-            else:
-                raise ConfigValueError(value)
+from .utils import ConfigDoc
 
 
 class SectionConfig(ConfigDoc):
 
-    def __init__(self, doc):
-        super(SectionConfig, self).__init__(self._section(doc))
+    def __init__(self, data):
+        self.base_data = copy.deepcopy(data)
+        super(SectionConfig, self).__init__(self._section(data))
         self._configure()
 
     class Meta:
@@ -93,11 +30,14 @@ class SectionConfig(ConfigDoc):
         return getattr(cls.Meta, key, None)
 
     def __getattr__(self, attr):
-        try:
-            return self.__getitem__(attr)
-        except KeyError:
-            section = self._meta('CONFIG_KEY')
-            raise MissingConfigurationError(attr, section)
+        if not attr.startswith('__'):
+            try:
+                return self.__getitem__(attr)
+            except KeyError:
+                section = self._meta('CONFIG_KEY')
+                raise MissingConfigurationError(attr, section)
+        else:
+            return super(SectionConfig, self).__getattr__(attr)
 
     def _configure(self):
         for key, val in self.items():
@@ -144,20 +84,16 @@ class SimpleSectionConfig(SectionConfig):
             # be referenced by other values, but also only update the list at
             # the given key if it has any references.
             elif isinstance(val, list):
-                new_ref_list = []
-                list_has_references = False
 
-                for element in val:
-                    ref = backwards_ref(element)
-                    if ref:
+                list_has_references = False
+                for i, element in enumerate(val):
+                    if isinstance(element, str) and element in self:
                         list_has_references = True
-                        new_ref_list.append(ref)
-                    else:
-                        new_ref_list.append(element)
+                        val[i] = self[element]
 
                 # Only Update List if There Were References Changed
                 if list_has_references:
-                    return new_ref_list
+                    return val
 
         updates = []
         for key, val in self.items():
@@ -171,24 +107,20 @@ class SimpleSectionConfig(SectionConfig):
 
 class FormatSectionConfig(SimpleSectionConfig):
 
-    def __init__(self, doc, colors, icons):
-        """
-        [x] TODO:
-        --------
-        Have to also allow for self referencing styles.
-        """
-        self._reference = {
-            'COLOR': colors,
-            'ICON': icons,
-            'STYLES': None,
-        }
-        super(FormatSectionConfig, self).__init__(doc)
+    # Currently Do Not Have Styles Built In
+    REF_MAP = {
+        'COLOR': 'COLORS',
+        'ICON': 'ICONS',
+        'STYLES': 'STYLES',
+    }
+
+    def __init__(self, data):
+        super(FormatSectionConfig, self).__init__(data)
         self._objectify()
 
     def _objectify(self):
         from termx.formatting.format import Format
         for key, val in self.items():
-            assert isinstance(val, ConfigDoc)
             self[key] = Format(
                 color=val.get('COLOR'),
                 styles=val.get('STYLES', []),
@@ -215,15 +147,19 @@ class FormatSectionConfig(SimpleSectionConfig):
             # All valid non-dict values should have been backwards referenced
             # by now, but we want to throw a different error to inform the user
             # of the invalid value.
-            if not isinstance(val, ConfigDoc):
+            if not isinstance(val, dict):
                 continue
 
             updates = []
             for k, v in val.items():
-                if k != 'STYLES':  # Currently Do Not Have Styles Built In
-                    ref = self._reference[k]
-                    if v in ref.store:
-                        updates.append((k, ref.store[v]))
+
+                ref_doc_name = self.REF_MAP.get(k)
+                if ref_doc_name not in self.base_data:
+                    raise ConfigError('Colors and Icons must be configured before Formats.')
+
+                ref_doc = self.base_data[ref_doc_name]
+                if v in ref_doc:
+                    updates.append((k, ref_doc[v]))
 
             updates = dict(updates)
             val.update(**updates)
@@ -231,7 +167,7 @@ class FormatSectionConfig(SimpleSectionConfig):
         # After Backwards Referencing Done: Validate to make sure that all
         # children are nested/dict structures.
         for key, val in self.items():
-            if not isinstance(val, ConfigDoc):
+            if not isinstance(val, dict):
                 raise ConfigValueError(val)
 
 

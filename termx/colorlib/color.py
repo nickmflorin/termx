@@ -7,8 +7,8 @@ from termx.exceptions import InvalidColor, InvalidStyle, ColorLibError
 from .base import abstract_formatter
 from .style import style
 
-# We cannot read from the config file until the circular import is
-# fixed.
+# We cannot read from the config file because the config file imports the
+# color module.  We need to figure out a way to fix this.
 COLOR_DEPTH = 256
 
 
@@ -116,7 +116,7 @@ class abstract_color(abstract_formatter):
             return color.full.ansi_codes
         elif COLOR_DEPTH == 24:  # [x, x, x, x, x]
             return color.true.ansi_codes
-        elif COLOR_DEPTH == 16:  # [x, x] ??
+        elif COLOR_DEPTH == 16:  # [x, x]
             return color.simple.ansi_codes
         elif COLOR_DEPTH == 8:  # [x]
             return color.basic.ansi_codes

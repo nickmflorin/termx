@@ -3,12 +3,6 @@ INDENT_COUNT : 2
 COLOR_DEPTH : 256
 
 ICONS:
-    SKULL: "☠"
-    CROSS: "✘"
-    CHECK: "✔"
-    TACK: "📌"
-    GEAR: "⚙️ "
-    CROSSING: "🚧"
     NOTSET: ""
 
     # States

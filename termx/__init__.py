@@ -23,7 +23,10 @@ Styles from the config object:
 
 >>> from termx.config import Colors
 """
-# from termx.config import config  # noqa
+
+# We Have to Import to Initialize
+from termx.config import config  # noqa
+
 from termx.colorlib import *  # noqa
 
 from .terminal import *  # noqa

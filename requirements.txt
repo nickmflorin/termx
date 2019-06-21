@@ -1,2 +1,4 @@
 dacite==1.0.2
 plumbum==1.6.7
+pyaml==19.4.1
+PyYAML==5.1.1

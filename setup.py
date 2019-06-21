@@ -2,7 +2,16 @@ from setuptools import setup, find_packages
 
 from termx import __NAME__, __FORMAL_NAME__
 from termx.config import config
+import os
 
+from termx.ext import get_app_root
+
+app_root = get_app_root()
+import os
+
+settings_file = os.path.join(app_root, 'config', 'defaults.yml')
+
+os.environ['SIMPLE_SETTINGS'] = settings_file
 
 VERSION = config.version()
 

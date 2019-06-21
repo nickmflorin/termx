@@ -1,9 +1,11 @@
 
 
 def playground():
-    from termx.config import config
-    print(config.COLORS.GREEN('TEST'))
-    config({'COLORS': {'GREEN': 'BLUE'}})
+    from simple_settings import settings
+    print(settings.INDENT_COUNT)
 
-    print(config.COLORS.GREEN('TEST'))
-    import ipdb; ipdb.set_trace()
+    from termx.config import config
+    config({'COLORS': {'GREEN': 'blue'}})
+
+    print(settings.COLORS.GREEN)
+
