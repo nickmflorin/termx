@@ -1,0 +1,2 @@
+dacite==1.0.2
+plumbum==1.6.7

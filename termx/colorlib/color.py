@@ -1,11 +1,15 @@
 import plumbum
 from plumbum import colors
 
-from termx.ext.utils import ensure_iterable
-from termx.core.exceptions import InvalidColor, InvalidStyle
+from termx.library import ensure_iterable
+from termx.exceptions import InvalidColor, InvalidStyle, ColorLibError
 
 from .base import abstract_formatter
 from .style import style
+
+# We cannot read from the config file until the circular import is
+# fixed.
+COLOR_DEPTH = 256
 
 
 """
@@ -78,10 +82,79 @@ We cannot just slice the ansi codes:
 """
 
 
-class color(abstract_formatter):
+class abstract_color(abstract_formatter):
 
     def __init__(self, value):
-        self._value = value
+        self._ansi_codes = []
+        self._set_ansi_codes(value)
+
+    @property
+    def ansi_codes(self):
+        return self._ansi_codes
+
+    @ansi_codes.setter
+    def ansi_codes(self, value):
+        self._set_ansi_codes(value)
+
+    def _get_ansi_codes_for_depth(self, color):
+        """
+        Given a plumbum color, returns the set of ANSI codes that correspond
+        to the color depth set in the config.
+
+        [x] NOTE:
+        --------
+        We have to load termx.config in the property itself because config
+        uses the colorlib.color module.
+
+        [x] TODO:
+        --------
+        Determine what type of color resolution support the given package
+        user has and return colors adjusted accordingly.  There might be
+        a property on the plumbum color to do this.
+        """
+        if COLOR_DEPTH == 256:  # [x, x, x]
+            return color.full.ansi_codes
+        elif COLOR_DEPTH == 24:  # [x, x, x, x, x]
+            return color.true.ansi_codes
+        elif COLOR_DEPTH == 16:  # [x, x] ??
+            return color.simple.ansi_codes
+        elif COLOR_DEPTH == 8:  # [x]
+            return color.basic.ansi_codes
+
+        # This error should be alleviated once we start validating our config.
+        raise ColorLibError('Invalid Color Depth')
+
+    def _get_ansi_codes_for_color_string(self, color):
+        """
+        Returns the ANSI related codes for a given color string.  The color
+        string can be specified as HEX value, a simple color string like `blue`
+        or `green`, or more complicated color strings supported by Pllumbum.
+
+        [x] TODO:
+        --------
+        Add support for other forms of specification, like RGBA.
+        """
+        try:
+            cl = self.plumbum_operator(color)
+        except plumbum.colorlib.styles.ColorNotFound:
+            raise InvalidColor(color)
+        else:
+            codes = self._get_ansi_codes_for_depth(cl)
+            return ensure_iterable(codes, coercion=list, force_coerce=True)
+
+    def _set_ansi_codes(self, value):
+        if isinstance(value, type(self)):
+            self._ansi_codes = value._ansi_codes
+        elif isinstance(value, str):
+            self._ansi_codes = self._get_ansi_codes_for_color_string(value)
+        elif isinstance(value, (tuple, list)):
+            if any([not isinstance(v, int) for v in value]):
+                raise InvalidColor(value)
+            self._ansi_codes = value
+        elif isinstance(value, int):
+            self._ansi_codes = ensure_iterable(value, coercion=list, force_coerce=True)
+        else:
+            raise InvalidColor(value)
 
     def __getattr__(self, name):
         """
@@ -134,32 +207,16 @@ class color(abstract_formatter):
 
             return lazy_style
 
-    @property
-    def ansi_codes(self):
-        """
-        Returns the ANSI related codes for a given color string.
 
-        [x] IMPORTANT
-        -------------
-        This is the only purpose of keeping plumbum around: they support flexible
-        color string identification, such as 'red' and HEX colors like '#EFEFEF'.
+class color(abstract_color):
 
-        It gives us a little more flexibility for the time being, but we want to do
-        some things on our own to avoid having to use their library in the future.
+    plumbum_operator = colors.fg
 
-        [x] TODO:
-        --------
-        Determine what type of color resolution support the given package
-        user has and return colors adjusted accordingly.  There might be
-        a property on the plumbum color to do this.
-        """
-        if isinstance(self._value, type(self)):
-            return self.ansi_codes
-        try:
-            color = colors.fg(self._value)
-        except plumbum.colorlib.styles.ColorNotFound:
-            raise InvalidColor(self._value)
-        else:
-            # Resolution Full, Color Codes: [x, x, x]
-            codes = color.full.ansi_codes
-            return ensure_iterable(codes, coercion=list, force_coerce=True)
+    def highlight(self, text):
+        color = highlight(self.ansi_codes)
+        return color(text)
+
+
+class highlight(abstract_color):
+
+    plumbum_operator = colors.bg

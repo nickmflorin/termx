@@ -4,8 +4,8 @@ import sys
 import threading
 
 from termx.ext.compat import ENCODING, PY2
-from termx.core.terminal import Cursor
-from termx.core.colorlib import color as Color
+from termx.terminal import Cursor
+from termx.colorlib import color as Color
 
 from .models import TerminalOptions, SpinnerStates, LineItem
 from .base import AbstractSpinner, AbstractGroup
@@ -120,12 +120,15 @@ class Spinner(AbstractSpinner):
         # [x] NOTE: This does not work perfectly if we reenter the cursor, but
         # at least does not mess up the spinner.  That is why we use strict
         # mode to raise exceptions if you try to print.
-        with Cursor.silence_stdout(swallow=True):
-            try:
-                child.start()
-                yield child
-            finally:
-                child.done()
+
+        # Don't Silence STDOUT for now - makes debugging difficult.  We want
+        # to be able to temporarily disable the spinner.
+        # with Cursor.silence_stdout(swallow=True):
+        try:
+            child.start()
+            yield child
+        finally:
+            child.done()
 
     def __repr__(self):
         repr_ = u"<Spinner frames={0!s}>".format(self._frames)

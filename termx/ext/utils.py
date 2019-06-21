@@ -17,7 +17,6 @@ Utilities that are private to the package should be placed in framework.py.
 """
 
 import asyncio
-import collections
 from functools import wraps
 import re
 import sys
@@ -76,37 +75,6 @@ def humanize_list(value, callback=str, conjunction='and', oxford_comma=True):
     if len(value) >= 3 and oxford_comma is True:
         s += ","
     return "%s %s %s" % (s, conjunction, callback(value[num - 1]))
-
-
-def ensure_iterable(value, coercion=tuple, force_coerce=False):
-    """
-    Some of the checking here is definitely overkill, and we should look into
-    exactly what we want to use to define an iterable.  It should exclude
-    generates, string objects, file objects, bytes objects, etc.  Just because
-    it has an __iter__ method does not mean it should be considered an iterable
-    for purposes of this method.
-    """
-    if (
-        type(value) is not str
-        and type(value) is not bytes
-        and isinstance(value, collections.Iterable)
-    ):
-        if type(value) is list:
-            if coercion is not list and force_coerce:
-                return coercion(value)
-            return value
-
-        elif type(value) is tuple:
-            if coercion is not tuple and force_coerce:
-                return coercion(value)
-            return value
-
-        else:
-            raise ValueError('Invalid iterable type %s.' % type(value))
-    else:
-        if type(value) not in [str, bytes, int, float, bool]:
-            raise ValueError('Cannot guarantee coercion of type %s.' % value)
-        return coercion([value])
 
 
 def break_before(fn):

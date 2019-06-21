@@ -1,5 +1,6 @@
 from termx.ext.compat import safe_text
-from termx.core.exceptions import ColorLibError
+
+from termx.exceptions import ColorLibError
 
 
 def ansi_sequence_from_codes(*codes):

@@ -24,7 +24,7 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'tests*']),
     entry_points="""
         [console_scripts]
-        playground = termx.playground.main:run_playground
-        clean = termx.ext.scripts:clean
+        playground = termx.main:run_playground
+        clean = termx.main:clean
     """,
 )

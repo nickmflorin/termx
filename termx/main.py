@@ -1,4 +1,4 @@
-from termx.playground.env import playground as env
+from .playground import playground
 
 
 def run_playground():
@@ -12,5 +12,16 @@ def run_playground():
     It is in this module where we play around with certain packages, code and
     ideas, not being in the Cement app framework but still having access to the
     components that make up the instattack app.
+
+    [x] TODO:
+    --------
+    Remove from production distribution/package.
     """
-    env()
+    playground()
+
+
+def clean():
+    from termx.ext import remove_pybyte_data, get_app_root
+    root = get_app_root()
+    print('Cleaning %s' % root)
+    remove_pybyte_data(root)

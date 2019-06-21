@@ -1,26 +1,30 @@
 from termx import Format, color
+# from termx.config import config
 
 
 def test_format_with_color():
+    # config({'COLOR_DEPTH': 24})
 
     def initialize_with_string():
         fmt = Format(color='blue')
-        value = fmt._color('foo')
+        import ipdb; ipdb.set_trace()
+        value = fmt.color('foo')
+        import ipdb; ipdb.set_trace()
         assert value == '\x1b[34mfoo\x1b[0m'
 
     def initialize_with_color():
         fmt = Format(color=color('blue'))
-        value = fmt._color('foo')
+        value = fmt.color('foo')
         assert value == '\x1b[34mfoo\x1b[0m'
 
     def initialize_with_hex():
         fmt = Format(color='#000000')
-        value = fmt._color('foo')
+        value = fmt.color('foo')
         assert value == '\x1b[38;2;0;0;0mfoo\x1b[0m'
 
     initialize_with_string()
     initialize_with_color()
-    initialize_with_hex()
+    # initialize_with_hex()
 
 
 def test_format_with_style():

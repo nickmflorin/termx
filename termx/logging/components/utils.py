@@ -1,7 +1,9 @@
-from termx.ext.utils import ensure_iterable
-from termx.core.formatting import Format
-from termx.core.colorlib import color as Color
-from termx.core.exceptions import InvalidCallable, InvalidColor
+from termx.library import ensure_iterable
+from termx.formatting import Format
+from termx.colorlib import color as Color
+from termx.exceptions import InvalidCallable, InvalidColor
+
+import warnings
 
 
 def break_after(value):
@@ -136,14 +138,15 @@ def get_value(record, value=None, attrs=None):
     if value:
         if callable(value):
             value = get_callable_value(record, value)
-
-            # We cannot call this recursively since there is no way to differentiate
-            # between string and attributes, but if it is a valid attribute, we want
-            # to return that.
-            attribute_value = get_record_attribute(record, value)
-            if attribute_value:
-                return attribute_value
-
+            if value is None:
+                warnings.warn('Callable returned null value.')
+            else:
+                # We cannot call this recursively since there is no way to differentiate
+                # between string and attributes, but if it is a valid attribute, we want
+                # to return that.
+                attribute_value = get_record_attribute(record, value)
+                if attribute_value:
+                    return attribute_value
             # Will raise ValueError if value is None.
             if value is not None:
                 return get_value(record, value=value)

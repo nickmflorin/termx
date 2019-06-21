@@ -1,5 +1,5 @@
-from termx.ext.utils import ensure_iterable
-from termx.core.exceptions import InvalidStyle
+from termx.library import ensure_iterable
+from termx.exceptions import InvalidStyle
 
 from .base import abstract_formatter
 
@@ -52,9 +52,13 @@ class style(abstract_formatter, metaclass=StyleMeta):
     def styles(self):
         return self._styles
 
-    # NOTE: This kind of makes the use of the ansi_codes property useless.
     @styles.setter
     def styles(self, value):
+        """
+        [x] NOTE:
+        --------
+        This kind of makes the use of the ansi_codes property useless.
+        """
         self._styles = self._set_styles(value)
 
     def _set_styles(self, styles):
@@ -148,9 +152,9 @@ class style(abstract_formatter, metaclass=StyleMeta):
 
     @classmethod
     def code_for(cls, style_name):
-        if style_name not in cls.SUPPORTED_STYLES:
+        if style_name.lower() not in cls.SUPPORTED_STYLES:
             raise InvalidStyle(style_name)
-        return [st[1] for st in cls.SUPPORTED if st[0] == style_name][0]
+        return [st[1] for st in cls.SUPPORTED if st[0] == style_name.lower()][0]
 
     @classmethod
     def name_for(cls, code):
@@ -243,12 +247,4 @@ class style(abstract_formatter, metaclass=StyleMeta):
             self.styles = tuple(styles)
 
     def clear(self):
-        self.styles = ()
-
-    def clear_decoration(self):
-        """
-        [x] TODO:
-        --------
-        Be more selective about which styles are related to text decoration.
-        """
         self.styles = ()
