@@ -320,12 +320,12 @@ class Format(FormatDataClass, IconFormat, WrapperFormat):
     def _format(self, text):
         text = self.color(text)
         text = self.highlight(text)
-        return self.style(text)
+        return self.styles(text)
 
     def add_style(self, style_name):
-        if not self.style.has_style(style_name):
-            self.style.add_style(style_name)
+        if not self.styles.has_style(style_name):
+            self.styles.add_style(style_name)
 
     def remove_style(self, style_name):
-        if self.style.has_style(style_name):
-            self.style.remove_style(style_name)
+        if self.styles.has_style(style_name):
+            self.styles.remove_style(style_name)

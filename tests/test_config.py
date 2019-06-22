@@ -27,3 +27,7 @@ def test_override_color_value(override_settings):
     assert hasattr(settings.COLORS, 'RED')
     value = settings.COLORS.RED('foo')
     assert value == '\x1b[38;5;167mfoo\x1b[0m'
+
+
+def test_override_format_value(override_settings):
+    pass

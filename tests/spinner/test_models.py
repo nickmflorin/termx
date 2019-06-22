@@ -1,5 +1,5 @@
 from termx import Colors, Format
-from termx.core.spinner.models import SpinnerStates
+from termx.spinner.models import SpinnerStates
 
 
 def test_line_item(make_line_item):

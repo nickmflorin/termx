@@ -17,11 +17,6 @@ class SectionDoc(ConfigDoc):
         forward_referenced_data = self.forward_reference_data(section_data)
         super(SectionDoc, self).__init__(forward_referenced_data)
 
-    class Meta:
-        CONFIG_KEY = None
-        NOT_CONFIGURABLE = ()
-        ALLOWED = ()
-
     @property
     def section_key(self):
         return self._meta('CONFIG_KEY')
