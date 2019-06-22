@@ -1,11 +1,3 @@
-INDENT_COUNT = 2
-COLOR_DEPTH = 256
-DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-
-ANSI_ESCAPE_CHAR = "\x1b"
-STRICT_CONFIG = True
-
-
 ICONS = {
     "NOTSET": "",
 

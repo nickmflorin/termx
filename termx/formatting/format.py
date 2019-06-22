@@ -1,6 +1,6 @@
 import contextlib
 import copy
-from dataclasses import dataclass, field, fields, replace
+from dataclasses import dataclass, field, fields, replace, InitVar
 import typing
 
 from termx.library import ensure_iterable
@@ -78,6 +78,15 @@ class FormatDataClass:
                     for style in styles:
                         data['styles'].add_style(style, strict=False)
 
+            # Treat style the same way
+            elif key == 'style':
+                if val is None or val == []:
+                    data['styles'] = Style()
+                else:
+                    styles = ensure_iterable(val)
+                    for style in styles:
+                        data['styles'].add_style(style, strict=False)
+
             else:
                 if key not in data:
                     raise FormatError(f'Invalid format attribute {key}.')
@@ -122,6 +131,9 @@ class FormatDataClass:
         be supplied.
         """
         init_overrides = self._initialization_kwargs(**overrides)
+
+        # Style Required for Replace, Even if None
+        init_overrides.setdefault('style', init_overrides.get('styles'))
         return replace(
             self,
             **init_overrides,
@@ -256,8 +268,9 @@ class Format(FormatDataClass, IconFormat, WrapperFormat):
     color: typing.Union[Color, str] = field(default=Color('black'))
     styles: typing.List[typing.Union[Style, str, int]] = field(default_factory=list)
     highlight: typing.Union[Color, str] = field(default=Color('white'))
+    style: InitVar[typing.Any] = None
 
-    def __post_init__(self):
+    def __post_init__(self, style):
 
         FormatDataClass.__post_init__(self)
 
@@ -267,9 +280,16 @@ class Format(FormatDataClass, IconFormat, WrapperFormat):
         if self.highlight and not isinstance(self.highlight, Color):
             self.highlight = Color(self.highlight)
 
+        if style and not self.styles:
+            if isinstance(style, Style):
+                self.styles = Style
+            else:
+                self.styles = ensure_iterable(style, coercion=tuple, force_coerce=True)
+
         if not isinstance(self.styles, Style):
+            self.styles = self.styles or []
             self.styles = ensure_iterable(self.styles, coercion=tuple, force_coerce=True)
-            self.style = Style(*self.styles)
+            self.styles = Style(*self.styles)
 
     def __call__(self, text, **overrides):
         """

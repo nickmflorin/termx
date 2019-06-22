@@ -1,9 +1,9 @@
 from termx import Format, color
-# from termx.config import config
+from termx.config import config
 
 
-def test_format_with_color():
-    # config({'COLOR_DEPTH': 24})
+def test_format_with_color(override_settings):
+    override_settings({'COLOR_DEPTH': 256, 'COLORS': {'GREEN': 'BLUE'}})
 
     def initialize_with_string():
         fmt = Format(color='blue')

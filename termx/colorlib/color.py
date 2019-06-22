@@ -1,15 +1,13 @@
 import plumbum
 from plumbum import colors
 
+from simple_settings import settings
+
 from termx.library import ensure_iterable
 from termx.exceptions import InvalidColor, InvalidStyle, ColorLibError
 
 from .base import abstract_formatter
 from .style import style
-
-# We cannot read from the config file because the config file imports the
-# color module.  We need to figure out a way to fix this.
-COLOR_DEPTH = 256
 
 
 """
@@ -85,8 +83,12 @@ We cannot just slice the ansi codes:
 class abstract_color(abstract_formatter):
 
     def __init__(self, value):
+        self._raw = value
         self._ansi_codes = []
         self._set_ansi_codes(value)
+
+    def copy(self):
+        return self.__class__(self._raw)
 
     @property
     def ansi_codes(self):
@@ -112,13 +114,13 @@ class abstract_color(abstract_formatter):
         user has and return colors adjusted accordingly.  There might be
         a property on the plumbum color to do this.
         """
-        if COLOR_DEPTH == 256:  # [x, x, x]
+        if settings.COLOR_DEPTH == 256:  # [x, x, x]
             return color.full.ansi_codes
-        elif COLOR_DEPTH == 24:  # [x, x, x, x, x]
+        elif settings.COLOR_DEPTH == 24:  # [x, x, x, x, x]
             return color.true.ansi_codes
-        elif COLOR_DEPTH == 16:  # [x, x]
+        elif settings.COLOR_DEPTH == 16:  # [x, x]
             return color.simple.ansi_codes
-        elif COLOR_DEPTH == 8:  # [x]
+        elif settings.COLOR_DEPTH == 8:  # [x]
             return color.basic.ansi_codes
 
         # This error should be alleviated once we start validating our config.
