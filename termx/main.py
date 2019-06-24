@@ -1,3 +1,5 @@
+from .library import remove_pybyte_data
+from .ext import get_app_root, get_root
 from .playground import playground
 
 
@@ -21,7 +23,12 @@ def run_playground():
 
 
 def clean():
-    from termx.ext import remove_pybyte_data, get_app_root
     root = get_app_root()
+    print('Cleaning %s' % root)
+    remove_pybyte_data(root)
+
+
+def cleanroot():
+    root = get_root()
     print('Cleaning %s' % root)
     remove_pybyte_data(root)

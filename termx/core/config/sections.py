@@ -1,8 +1,7 @@
 import copy
 
-from termx.exceptions import (ConfigError, MissingConfigurationError,
+from .exceptions import (ConfigError, MissingConfigurationError,
     MissingSectionError, ConfigValueError, DisallowedFieldError)
-
 from .doc import ConfigDoc
 
 
@@ -156,7 +155,7 @@ class FormatSectionDoc(SectionDoc):
         Validates the attribute to ensure that it not a non-configurable param
         before **updating**.
         """
-        from termx.formatting.format import Format
+        from termx.core.formatting.format import Format
 
         # Should Only be Case on Initialization (Ideally) - This means this check
         # might be minorly unnecessary.  However, we still want to allow users
@@ -167,7 +166,11 @@ class FormatSectionDoc(SectionDoc):
             return Format(
                 color=value.get('COLOR'),
                 styles=value.get('STYLES'),
-                icon=value.get('ICON')
+                icon=value.get('ICON'),
+                style=value.get('STYLE'),
+                wrapper=value.get('WRAPPER'),
+                # Depth Required to Avoid Circular Import
+                depth=self.base_data['COLOR_DEPTH']
             )
         elif isinstance(value, Format):
             return value
@@ -247,9 +250,7 @@ class ColorsDoc(SectionDoc):
         of the read raw settings.  This means we have to allow the
         copying of str instances.
         """
-        from termx.colorlib.color import color
-
-        if isinstance(value, color):
+        if hasattr(value, '__class__' and value.__class__.__name__ == 'color'):
             return value.copy()
         elif isinstance(value, list):
             return [self._copy_val(v) for v in value]
@@ -285,10 +286,12 @@ class ColorsDoc(SectionDoc):
         We might want to support specifying a list of integer ANSI codes
         or possible types other than str and list[str].
         """
-        from termx.colorlib.color import color
+        from termx.core.colorlib.color import color
 
         if isinstance(value, str):
-            return color(value)
+            # Have to use a special method to avoid circular imports.
+            depth = self.base_data['COLOR_DEPTH']
+            return color(value, depth=depth)
         elif isinstance(value, list):
             return [self.__valtransform__(v) for v in value]
         elif isinstance(value, color):
@@ -308,7 +311,8 @@ class TextDoc(FormatSectionDoc):
 
     class Meta:
         CONFIG_KEY = 'TEXT'
-        ALLOWED = ('COLOR', 'STYLES', 'ICON')
+        # Format Obj Treats Style and Styles as the Same Thing to Not Confuse
+        ALLOWED = ('COLOR', 'STYLES', 'ICON', 'STYLE', 'WRAPPER')
         NOT_CONFIGURABLE = ()
 
 
@@ -316,5 +320,6 @@ class FormatsDoc(FormatSectionDoc):
 
     class Meta:
         CONFIG_KEY = 'FORMATS'
-        ALLOWED = ('COLOR', 'STYLES', 'ICON')
+        # Format Obj Treats Style and Styles as the Same Thing to Not Confuse
+        ALLOWED = ('COLOR', 'STYLES', 'ICON', 'STYLE', 'WRAPPER')
         NOT_CONFIGURABLE = ()

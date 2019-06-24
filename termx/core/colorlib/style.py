@@ -1,5 +1,5 @@
 from termx.library import ensure_iterable
-from termx.exceptions import InvalidStyle
+from termx.core.exceptions import InvalidStyle
 
 from .base import abstract_formatter
 

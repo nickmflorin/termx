@@ -1,43 +1,11 @@
 from termx.ext.compat import safe_text
-
-from termx.exceptions import ColorLibError
-
-
-def ansi_sequence_from_codes(*codes):
-    """
-    [x] NOTE:
-    -------
-    There is a circular import issue with the relationship between colour.py,
-    config and this utility.
-
-    If we try to import config.constants here to access constants.ANSI_ESCAPE_CHAR,
-    we get an issue because config.configure imports colour.py, and colour.py
-    imports this file, which would then be importing config.
-
-    [x] TODO
-    --------
-    Note the difference and decide between the use of \x1b and \033.  Also might
-    want to see if there is a way to store in config without circular import
-    issues.
-    """
-    ANSI_ESCAPE_CHAR = "\x1b"
-
-    for cd in codes:
-        if not isinstance(cd, int):
-            raise ColorLibError('ANSI codes must be integers.')
-
-    if len(codes) != 1:
-        seq = ';'.join(["%s" % code for code in codes])
-    else:
-        seq = codes[0]
-    return "%s[%sm" % (ANSI_ESCAPE_CHAR, seq)
+from termx.core.exceptions import ColorLibError
 
 
 class abstract_formatter(object):
     """
     Abstract base class for ANSII based formatting objects.
     """
-    RESET = ansi_sequence_from_codes(0)
 
     def __call__(self, text):
         """
@@ -49,8 +17,12 @@ class abstract_formatter(object):
         return self.formatter(text)
 
     @classmethod
+    def reset_code(cls):
+        return cls.ansi_sequence_from_codes(0)
+
+    @classmethod
     def reset(cls, text):
-        return "%s%s" % (text, cls.RESET)
+        return "%s%s" % (text, cls.reset_code())
 
     @classmethod
     def get_ansi_sequence(cls, *args, **kwargs):
@@ -61,6 +33,27 @@ class abstract_formatter(object):
     def get_ansi_codes(cls, *args, **kwargs):
         initialized_cls = cls(*args, **kwargs)
         return initialized_cls.ansi_codes
+
+    @classmethod
+    def ansi_sequence_from_codes(cls, *codes):
+        """
+        [x] TODO
+        --------
+        Note the difference and decide between the use of \x1b and \033.  Also might
+        want to see if there is a way to store in config without circular import
+        issues.
+        """
+        from termx.core.config import settings
+
+        for cd in codes:
+            if not isinstance(cd, int):
+                raise ColorLibError('ANSI codes must be integers.')
+
+        if len(codes) != 1:
+            seq = ';'.join(["%s" % code for code in codes])
+        else:
+            seq = codes[0]
+        return "%s[%sm" % (settings.ANSI_ESCAPE_CHAR, seq)
 
     @property
     def ansi_sequence(self):
@@ -77,7 +70,7 @@ class abstract_formatter(object):
         """
         if len(self.ansi_codes) == 0:
             raise ColorLibError('Cannot generate ANSI sequence for empty set of ANSI codes.')
-        return ansi_sequence_from_codes(*self.ansi_codes)
+        return self.ansi_sequence_from_codes(*self.ansi_codes)
 
     @property
     def formatter(self):

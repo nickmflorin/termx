@@ -1,13 +1,4 @@
 """
-[x] NOTE:
---------
-Because the ext module is used both at the upper levels by setuptools, the config
-and at lower levels in core, it is important that all imports into the files
-in these modules be lazy imported.
-
-The functionality in these modules should not depend on functionality elsehwhere
-in the app, except for top level constants.
-
 [x] THIS FILE
 ------------
 This file should contain utilities that are meant solely for private use
@@ -31,23 +22,16 @@ def get_root():
     When we reach the directory associated with the app directory, the root
     is the path's parent.
     """
-
-    # Temporary, Import Not Working
-    # from termx import __NAME__
-    __NAME__ = 'termx'
-
+    from termx import settings
     path = os.path.dirname(os.path.realpath(__file__))
-    parent = find_first_parent(path, __NAME__)
+    parent = find_first_parent(path, settings.NAME)
     return str(parent.parent)
 
 
 def get_app_root():
-    # Temporary, Import Not Working
-    # from termx import __NAME__
-    __NAME__ = 'termx'
-
+    from termx import settings
     root = get_root()
-    return os.path.join(root, __NAME__)
+    return os.path.join(root, settings.NAME)
 
 
 def get_root_file_path(filename, ext=None):

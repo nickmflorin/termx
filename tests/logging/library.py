@@ -1,5 +1,5 @@
 from termx import Format, color
-from termx.logging import Lines, Line, Label, Segment
+from termx.core.logging import Lines, Line, Label, Segment
 
 
 def test_label(make_mock_object, make_record, null_record_callable):

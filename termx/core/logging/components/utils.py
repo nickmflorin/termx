@@ -1,7 +1,7 @@
 from termx.library import ensure_iterable
-from termx.formatting import Format
-from termx.colorlib import color as Color
-from termx.exceptions import InvalidCallable, InvalidColor
+from termx.core.formatting import Format
+from termx.core.colorlib import color as Color
+from termx.core.exceptions import InvalidCallable, InvalidColor
 
 import warnings
 

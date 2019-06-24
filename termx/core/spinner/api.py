@@ -4,8 +4,8 @@ import sys
 import threading
 
 from termx.ext.compat import ENCODING, PY2
-from termx.terminal import Cursor
-from termx.colorlib import color as Color
+from termx.core.terminal import Cursor
+from termx.core.colorlib.color import color as Color
 
 from .models import TerminalOptions, SpinnerStates, LineItem
 from .base import AbstractSpinner, AbstractGroup

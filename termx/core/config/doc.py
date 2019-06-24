@@ -1,13 +1,6 @@
 import copy
-import logging
-import warnings
 
-from simple_settings import settings
-
-from termx.exceptions import ConfigError, InconfigurableError, ConfigValueError
-
-
-logger = logging.getLogger('Configuration')
+from .exceptions import ConfigError, InconfigurableError, ConfigValueError
 
 
 class ConfigDoc(dict):
@@ -22,6 +15,7 @@ class ConfigDoc(dict):
 
     def __init__(self, *args, **kwargs):
         self.update(*args, **kwargs)
+        self.strict = True  # Just Hardcode for Now
 
     def __getattr__(self, key):
         return self.__getitem__(key)
@@ -44,9 +38,7 @@ class ConfigDoc(dict):
         super(ConfigDoc, self).__delitem__(self.__keytransform__(key))
 
     def __keytransform__(self, key):
-        if not key.startswith('__'):
-            return key.upper()
-        return key
+        return key.upper()
 
     def __valtransform__(self, value):
         """
@@ -161,12 +153,14 @@ class ConfigDoc(dict):
         fields = self._meta('NOT_CONFIGURABLE')
         return [fld.upper() for fld in fields]
 
-    @classmethod
-    def _handle_config_error(cls, e):
-        if settings.STRICT_CONFIG:
-            raise e
-        warnings.warn(str(e))
-        logger.warn(str(e))
+    def _handle_config_error(self, e):
+        """
+        [x] TODO:
+        --------
+        Implement `strict` parameter and log/issue warnings instead of not
+        in strict mode.
+        """
+        raise e
 
     def _raise_if_nonconfigurable_field(self, attr):
         """

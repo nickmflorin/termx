@@ -4,11 +4,10 @@ from enum import Enum
 import shutil
 import typing
 
-from simple_settings import settings
-
+from termx.core.config import settings
 from termx.ext.compat import safe_text
 from termx.ext.utils import measure_ansi_string
-from termx.colorlib import color as Color
+from termx.core.colorlib.color import color as Color
 
 from ._utils import shaded_level
 

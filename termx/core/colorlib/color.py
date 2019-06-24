@@ -1,14 +1,11 @@
 import plumbum
 from plumbum import colors
 
-from simple_settings import settings
-
 from termx.library import ensure_iterable
-from termx.exceptions import InvalidColor, InvalidStyle, ColorLibError
+from termx.core.exceptions import InvalidColor, InvalidStyle, ColorLibError
 
 from .base import abstract_formatter
 from .style import style
-
 
 """
 Packages to Consider
@@ -82,10 +79,15 @@ We cannot just slice the ansi codes:
 
 class abstract_color(abstract_formatter):
 
-    def __init__(self, value):
+    def __init__(self, value, depth=None):
+        """
+        When initializing a color from settings, we cannot import settings
+        to access COLOR_DEPTH, because it causes a circular import.  This
+        means that we have to directly pass in the COLOR_DEPTH only in the case
+        of initializing colors from the settings module.
+        """
         self._raw = value
-        self._ansi_codes = []
-        self._set_ansi_codes(value)
+        self._ansi_codes = self.get_ansi_codes(value, depth=depth)
 
     def copy(self):
         return self.__class__(self._raw)
@@ -96,9 +98,10 @@ class abstract_color(abstract_formatter):
 
     @ansi_codes.setter
     def ansi_codes(self, value):
-        self._set_ansi_codes(value)
+        self._ansi_codes = self.get_ansi_codes(value)
 
-    def _get_ansi_codes_for_depth(self, color):
+    @classmethod
+    def get_ansi_codes_for_color_depth(cls, color, depth):
         """
         Given a plumbum color, returns the set of ANSI codes that correspond
         to the color depth set in the config.
@@ -114,19 +117,21 @@ class abstract_color(abstract_formatter):
         user has and return colors adjusted accordingly.  There might be
         a property on the plumbum color to do this.
         """
-        if settings.COLOR_DEPTH == 256:  # [x, x, x]
+        if depth == 256:  # [x, x, x]
             return color.full.ansi_codes
-        elif settings.COLOR_DEPTH == 24:  # [x, x, x, x, x]
+        elif depth == 24:  # [x, x, x, x, x]
             return color.true.ansi_codes
-        elif settings.COLOR_DEPTH == 16:  # [x, x]
+        elif depth == 16:  # [x, x]
             return color.simple.ansi_codes
-        elif settings.COLOR_DEPTH == 8:  # [x]
+        elif depth == 8:  # [x]
             return color.basic.ansi_codes
+        return color.true.ansi_codes
 
         # This error should be alleviated once we start validating our config.
         raise ColorLibError('Invalid Color Depth')
 
-    def _get_ansi_codes_for_color_string(self, color):
+    @classmethod
+    def get_ansi_codes_for_color_string(cls, color, depth=None):
         """
         Returns the ANSI related codes for a given color string.  The color
         string can be specified as HEX value, a simple color string like `blue`
@@ -137,24 +142,37 @@ class abstract_color(abstract_formatter):
         Add support for other forms of specification, like RGBA.
         """
         try:
-            cl = self.plumbum_operator(color)
+            cl = cls.plumbum_operator(color)
         except plumbum.colorlib.styles.ColorNotFound:
             raise InvalidColor(color)
         else:
-            codes = self._get_ansi_codes_for_depth(cl)
+            # This block can hit a circular import when initializing a color from
+            # settings if the color depth is not directly passed in.
+            if not depth:
+                from termx.core.config import settings
+                depth = settings.COLOR_DEPTH
+
+            codes = cls.get_ansi_codes_for_color_depth(cl, depth)
             return ensure_iterable(codes, coercion=list, force_coerce=True)
 
-    def _set_ansi_codes(self, value):
-        if isinstance(value, type(self)):
-            self._ansi_codes = value._ansi_codes
+    @classmethod
+    def get_ansi_codes(cls, value, depth=None):
+        if isinstance(value, cls):
+            return value._ansi_codes
+
+        # This block can hit a circular import when initializing a color from
+        # settings if the color depth is not directly passed in.
         elif isinstance(value, str):
-            self._ansi_codes = self._get_ansi_codes_for_color_string(value)
+            return cls.get_ansi_codes_for_color_string(value, depth=depth)
+
         elif isinstance(value, (tuple, list)):
             if any([not isinstance(v, int) for v in value]):
                 raise InvalidColor(value)
-            self._ansi_codes = value
+            return value
+
         elif isinstance(value, int):
-            self._ansi_codes = ensure_iterable(value, coercion=list, force_coerce=True)
+            return ensure_iterable(value, coercion=list, force_coerce=True)
+
         else:
             raise InvalidColor(value)
 

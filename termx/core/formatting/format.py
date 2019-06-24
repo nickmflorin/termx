@@ -4,10 +4,11 @@ from dataclasses import dataclass, field, fields, replace, InitVar
 import typing
 
 from termx.library import ensure_iterable
-from termx.exceptions import FormatError
+from termx.core.exceptions import FormatError
 
 from termx.ext.compat import safe_text
-from termx.colorlib import color as Color, style as Style
+from termx.core.colorlib.color import color as Color, highlight as Highlight
+from termx.core.colorlib.style import style as Style
 
 
 def format_bounds(element, format_with, formatter):
@@ -265,20 +266,21 @@ class WrapperFormat:
 @dataclass
 class Format(FormatDataClass, IconFormat, WrapperFormat):
 
-    color: typing.Union[Color, str] = field(default=Color('black'))
+    color: typing.Union[Color, str] = field(default=None)
     styles: typing.List[typing.Union[Style, str, int]] = field(default_factory=list)
-    highlight: typing.Union[Color, str] = field(default=Color('white'))
+    highlight: typing.Union[Color, str] = field(default=None)
     style: InitVar[typing.Any] = None
+    depth: InitVar[int] = None  # Required for Settings to Avoid Circular Import
 
-    def __post_init__(self, style):
+    def __post_init__(self, style, depth):
 
         FormatDataClass.__post_init__(self)
 
         if self.color and not isinstance(self.color, Color):
-            self.color = Color(self.color)
+            self.color = Color(self.color, depth=depth)
 
         if self.highlight and not isinstance(self.highlight, Color):
-            self.highlight = Color(self.highlight)
+            self.highlight = Highlight(self.highlight, depth=depth)
 
         if style and not self.styles:
             if isinstance(style, Style):
@@ -318,8 +320,10 @@ class Format(FormatDataClass, IconFormat, WrapperFormat):
         return text
 
     def _format(self, text):
-        text = self.color(text)
-        text = self.highlight(text)
+        if self.color:
+            text = self.color(text)
+        if self.highlight:
+            text = self.highlight(text)
         return self.styles(text)
 
     def add_style(self, style_name):
