@@ -21,7 +21,7 @@ doing this.
 """
 
 from .core import terminal, spinner, formatting, colorlib  # noqa
-from .core.config import settings
+from .config import settings
 
 
 def configure_settings(*args, **kwargs):

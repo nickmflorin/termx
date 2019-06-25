@@ -15,7 +15,7 @@ ENV variable before any import from termx is performed.
 
 os.environ['TERMX_SIMPLE_SETTINGS'] = 'prod'
 
-from termx.core.config import settings  # noqa
+from termx.config import settings  # noqa
 from termx.library import get_version  # noqa
 
 

@@ -134,7 +134,8 @@ class FormatDataClass:
         init_overrides = self._initialization_kwargs(**overrides)
 
         # Style Required for Replace, Even if None
-        init_overrides.setdefault('style', init_overrides.get('styles'))
+        init_overrides.setdefault('style', None)
+        init_overrides.setdefault('depth', None)
         return replace(
             self,
             **init_overrides,

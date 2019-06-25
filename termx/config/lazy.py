@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 from simple_settings import LazySettings
+from termx.ext import get_root
 
 from .exceptions import ConfigError
 from .doc import ConfigDoc
@@ -27,12 +28,13 @@ class LazierSettings(LazySettings):
 
     [x] TODO:
     --------
-    We might be able to get rid of the functionality in the Config object all
-    together if we just use this module.  We could override the update method
-    too.
+    Combine ConfidDoc with LazySettings into our own module (similiar to instattack).
+    Incorporate the .setup() method on getattr() which will not cause settings
+    to start loading data until first attribute accessed, which might alleviate
+    our CIRCULAR IMPORT ISSUES.
     """
     ENV_VAR = 'TERMX_SIMPLE_SETTINGS'
-    SETTINGS_DIR = ('termx', 'setting')
+    SETTINGS_DIR = ('termx', 'config', '_settings', )
     STRICT_CONFIG = True
     CUSTOM_DOCS = ['ICONS', 'COLORS', 'TEXT', 'FORMATS']
 
@@ -93,8 +95,8 @@ class LazierSettings(LazySettings):
 
         settings_file = cls.__SETTINGS_FILE__()
 
-        cwd = os.getcwd()
-        settings_root = os.path.join(cwd, *cls.SETTINGS_DIR)
+        root = get_root(NAME='termx')
+        settings_root = os.path.join(str(root), *cls.SETTINGS_DIR)
         settings_file_path = os.path.join(settings_root, "%s.py" % settings_file)
 
         settings_path = Path(settings_file_path)
@@ -102,7 +104,10 @@ class LazierSettings(LazySettings):
             raise RuntimeError('Installation settings file missing at %s.' % settings_file_path)
 
         # Last Component is Extension-less for simple_settings
-        simple_settings_path = "termx.setting.%s" % settings_path.name.replace(settings_path.suffix, '')
+        simple_settings_path = ("%s.%s" % (
+            '.'.join(cls.SETTINGS_DIR),
+            settings_path.name.replace(settings_path.suffix, '')
+        ))
         print("Using Settings %s" % simple_settings_path)
         return simple_settings_path
 

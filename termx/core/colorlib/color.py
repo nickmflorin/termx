@@ -149,7 +149,7 @@ class abstract_color(abstract_formatter):
             # This block can hit a circular import when initializing a color from
             # settings if the color depth is not directly passed in.
             if not depth:
-                from termx.core.config import settings
+                from termx.config import settings
                 depth = settings.COLOR_DEPTH
 
             codes = cls.get_ansi_codes_for_color_depth(cl, depth)

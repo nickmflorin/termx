@@ -12,7 +12,7 @@ import os
 from termx.library import find_first_parent
 
 
-def get_root():
+def get_root(NAME=None):
     """
     Given the path of the file calling the function, incrementally moves up
     directory by directory until either the root is reached (when the parent
@@ -22,20 +22,28 @@ def get_root():
     When we reach the directory associated with the app directory, the root
     is the path's parent.
     """
-    from termx import settings
     path = os.path.dirname(os.path.realpath(__file__))
-    parent = find_first_parent(path, settings.NAME)
+
+    if not NAME:
+        from termx.config import settings
+        NAME = settings.NAME
+
+    parent = find_first_parent(path, NAME)
     return str(parent.parent)
 
 
-def get_app_root():
-    from termx import settings
-    root = get_root()
-    return os.path.join(root, settings.NAME)
+def get_app_root(NAME=None):
+
+    if not NAME:
+        from termx.config import settings
+        NAME = settings.NAME
+
+    root = get_root(NAME=NAME)
+    return os.path.join(root, NAME)
 
 
-def get_root_file_path(filename, ext=None):
+def get_root_file_path(filename, NAME=None, ext=None):
     if ext:
         filename = "%s.%s" % (filename, ext)
-    root = get_root()
+    root = get_root(NAME=NAME)
     return os.path.join(root, filename)

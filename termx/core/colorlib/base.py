@@ -43,7 +43,7 @@ class abstract_formatter(object):
         want to see if there is a way to store in config without circular import
         issues.
         """
-        from termx.core.config import settings
+        from termx.config import settings
 
         for cd in codes:
             if not isinstance(cd, int):

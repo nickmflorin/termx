@@ -4,7 +4,7 @@ from enum import Enum
 import shutil
 import typing
 
-from termx.core.config import settings
+from termx.config import settings
 from termx.ext.compat import safe_text
 from termx.ext.utils import measure_ansi_string
 from termx.core.colorlib.color import color as Color
