@@ -155,7 +155,7 @@ class FormatSectionDoc(SectionDoc):
         Validates the attribute to ensure that it not a non-configurable param
         before **updating**.
         """
-        from termx.core.formatting.format import Format
+        from termx.fmt import Format
 
         # Should Only be Case on Initialization (Ideally) - This means this check
         # might be minorly unnecessary.  However, we still want to allow users
@@ -250,7 +250,7 @@ class ColorsDoc(SectionDoc):
         of the read raw settings.  This means we have to allow the
         copying of str instances.
         """
-        if hasattr(value, '__class__' and value.__class__.__name__ == 'color'):
+        if hasattr(value, '__class__') and value.__class__.__name__ == 'color':
             return value.copy()
         elif isinstance(value, list):
             return [self._copy_val(v) for v in value]
@@ -286,7 +286,7 @@ class ColorsDoc(SectionDoc):
         We might want to support specifying a list of integer ANSI codes
         or possible types other than str and list[str].
         """
-        from termx.core.colorlib.color import color
+        from termx.fmt import color
 
         if isinstance(value, str):
             # Have to use a special method to avoid circular imports.

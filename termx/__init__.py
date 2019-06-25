@@ -20,24 +20,5 @@ settings object.  However, this is probably the more straight forward way of
 doing this.
 """
 
-from .core import terminal, spinner, formatting, colorlib  # noqa
-from .config import settings
-
-
-def configure_settings(*args, **kwargs):
-    """
-    Updates the settings object (i.e. uses the .configure method of simple_settings)
-    but does so in a way that maintains ConfigDoc objects and updates nested
-    objects/settings in a non-destructive way.
-
-    Called Externally, Convenience Import
-
-    >>> from termx import settings
-    >>> settings.configure(...)
-
-    or
-
-    >>> from termx import configure_settings
-    >>> configure_settings(...)
-    """
-    settings.configure(*args, **kwargs)
+from .cursor import Cursor  # noqa
+from .config import settings  # noqa

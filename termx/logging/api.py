@@ -1,6 +1,5 @@
-from .handler import TermxHandler  # noqa
-from .components.parts import Header, Label
-from .components.base import SegmentCore, LineCore, LinesCore, LogFormatCore
+from .library.parts import Header, Label
+from .library.base import SegmentCore, LineCore, LinesCore, LogFormatCore
 
 
 __all__ = (
@@ -11,7 +10,6 @@ __all__ = (
     'Lines',
     'LogFormat',
     'DynamicLines',
-    'TermxHandler',
 )
 
 

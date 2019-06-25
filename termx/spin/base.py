@@ -3,7 +3,7 @@ import itertools
 import time
 import threading
 
-from termx.core.terminal import Cursor
+from termx import Cursor
 
 from .models import SpinnerStates, HeaderItem
 from ._utils import get_frames

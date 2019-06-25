@@ -2,7 +2,7 @@ import plumbum
 from plumbum import colors
 
 from termx.library import ensure_iterable
-from termx.core.exceptions import InvalidColor, InvalidStyle, ColorLibError
+from termx.exceptions import InvalidColor, InvalidStyle, ColorLibError
 
 from .base import abstract_formatter
 from .style import style

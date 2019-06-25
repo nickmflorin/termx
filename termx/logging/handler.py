@@ -1,7 +1,7 @@
 import logging
 
-from termx.core.colorlib import color
-from termx.core.exceptions import LoggingError
+from termx.fmt import color
+from termx.exceptions import LoggingError
 
 
 __all__ = ('TermxLogHandlerMixin', 'TermxLogFormatter', )

@@ -4,11 +4,11 @@ from dataclasses import dataclass, field, fields, replace, InitVar
 import typing
 
 from termx.library import ensure_iterable
-from termx.core.exceptions import FormatError
-
 from termx.ext.compat import safe_text
-from termx.core.colorlib.color import color as Color, highlight as Highlight
-from termx.core.colorlib.style import style as Style
+
+from termx.exceptions import FormatError
+
+from .colorlib import color as Color, highlight as Highlight, style as Style
 
 
 def format_bounds(element, format_with, formatter):

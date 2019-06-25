@@ -1,5 +1,5 @@
 from termx.ext.compat import safe_text
-from termx.core.exceptions import ColorLibError
+from termx.exceptions import ColorLibError
 
 
 class abstract_formatter(object):
@@ -43,7 +43,7 @@ class abstract_formatter(object):
         want to see if there is a way to store in config without circular import
         issues.
         """
-        from termx.config import settings
+        from termx import settings
 
         for cd in codes:
             if not isinstance(cd, int):
