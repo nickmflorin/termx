@@ -1,2 +1,0 @@
-plumbum==1.6.7
-simple-settings==0.16.0

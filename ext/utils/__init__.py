@@ -21,21 +21,7 @@ from functools import wraps
 import re
 import sys
 
-
-def string_format_tuple(value):
-    """
-    Recursively formats a tuple and nested tuples into string format.
-    """
-    value = list(value)
-    formatted = []
-
-    for item in value:
-        if isinstance(item, tuple):
-            formatted.append(string_format_tuple(item))
-        else:
-            formatted.append("%s" % item)
-
-    return '(' + ', '.join(formatted) + ')'
+from .formatting import *  # noqa
 
 
 def escape_ansi_string(value):
@@ -54,27 +40,6 @@ def percentage(num1, num2):
 
 def progress(num1, num2):
     return f"{num1}/{num2} ({'{0:.2f} %)'.format((num1 / num2 * 100))}"
-
-
-def humanize_list(value, callback=str, conjunction='and', oxford_comma=True):
-    """
-    Turns an interable list into a human readable string.
-    >>> list = ['First', 'Second', 'Third', 'fourth']
-    >>> humanize_list(list)
-    u'First, Second, Third, and fourth'
-    >>> humanize_list(list, conjunction='or')
-    u'First, Second, Third, or fourth'
-    """
-
-    num = len(value)
-    if num == 0:
-        return ""
-    elif num == 1:
-        return callback(value[0])
-    s = u", ".join(map(callback, value[:num - 1]))
-    if len(value) >= 3 and oxford_comma is True:
-        s += ","
-    return "%s %s %s" % (s, conjunction, callback(value[num - 1]))
 
 
 def break_before(fn):
