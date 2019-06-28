@@ -18,11 +18,15 @@ class ConditionalString(str):
         return re.findall(regex, arg)
 
     def formatted(self, *args, **kwargs):
+
+        def test_conditional(conditional):
+            return conditional in kwargs and kwargs[conditional] is not None
+
         flattened = []
         for arg in self.components:
             conditionals = self.get_conditionals(arg)
             if conditionals:
-                if all([conditional in kwargs for conditional in conditionals]):
+                if all([test_conditional(c) for c in conditionals]):
                     flattened.append(arg.format(**kwargs))
             else:
                 flattened.append(arg.format(**kwargs))

@@ -106,8 +106,8 @@ def ensure_iterable(value, coercion=tuple, force_coerce=False):
         else:
             raise ValueError('Invalid iterable type %s.' % type(value))
     else:
-        if type(value) not in [str, bytes, int, float, bool]:
-            raise ValueError('Cannot guarantee coercion of type %s.' % value)
+        # if type(value) not in [str, bytes, int, float, bool]:
+        #     raise ValueError('Cannot guarantee coercion of type %s.' % value)
         return coercion([value])
 
 
