@@ -5,7 +5,10 @@ description = "Advanced Terminal Utilities"
 authors = ["Nick Florin"]
 
 [tool.poetry.dependencies]
-python = "3.7.3"
+python = "^3.7"
+pytest = "^4.6"
+simple_settings = "^0.16.0"
+plumbum = "^1.6"
 
 [tool.poetry.dev-dependencies]
 

@@ -1,4 +1,4 @@
-from termx import Format, color
+from termx.fmt import Format, color
 
 
 def test_format_with_color(override_settings):

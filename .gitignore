@@ -11,3 +11,5 @@ env
 
 termx.egg-info
 termx.egg-info/*
+
+pip-wheel-metadata
